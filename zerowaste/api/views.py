@@ -7,14 +7,19 @@ from rest_framework import generics, permissions
 from .models import User
 
 
-class LoginView(APIView):
+class LoginView(generics.CreateAPIView):
     """
     API View to log in a user and return a JWT token.
     """
-    def post(self, request):
+    serializer_class = LoginSerializer
+    
+    def create(self, request):
         serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = serializer.validated_data['user']
+        serializer.is_valid(raise_exception=True)
+        
+        user = User.objects.get(email = serializer.validated_data['email'])
+
+        if user.check_password(serializer.validated_data['password']):
 
             # Create tokens (access and refresh tokens)
             refresh = RefreshToken.for_user(user)
@@ -26,20 +31,40 @@ class LoginView(APIView):
                 'access_token': access_token,
             }, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class RegisterView(APIView):
+class RegisterView(generics.CreateAPIView):
     """
     API View to register a new user.
     """
-    def post(self, request):
+    serializer_class = UserRegistrationSerializer
+      
+    def create(self, request, *args, **kwargs):
         serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({'message': 'User registered successfully', 'email': user.email}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        
+        preferences = serializer.validated_data['preferences']
+        allergies = serializer.validated_data['allergies']
+        saved_recipes = serializer.validated_data['saved_recipes']
+        
+        
+        User.objects.create(
+            email = serializer.validated_data["email"],
+            password = "")
+        user = User.objects.get(email=serializer.validated_data["email"])
+        user.set_password(serializer.validated_data["password"])
+        user.save()
+        
+        user.preferences.set(preferences)
+        user.allergies.set(allergies)
+        user.saved_recipes.set(saved_recipes)
+        
+        response_serializer = UserSerializer(User.objects.get(email=serializer.validated_data["email"]))
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
+
+    
 
 
 class UserListView(generics.ListCreateAPIView):

@@ -3,3 +3,8 @@
 *.log
 *.sql
 *.sqlite
+*.sqlite3
+
+# Ignore Django migration files
+**/migrations/*
+!**/migrations/__init__.py
