@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import LoginSerializer, UserRegistrationSerializer, UserSerializer
-from rest_framework import generics, permissions, response
+from rest_framework import generics, permissions
 from .models import User
 
 
@@ -29,7 +29,7 @@ class LoginView(generics.CreateAPIView):
                 'access_token': access_token,
             }, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -59,7 +59,7 @@ class RegisterView(generics.CreateAPIView):
         user.saved_recipes.set(saved_recipes)
         
         response_serializer = UserSerializer(User.objects.get(email=serializer.validated_data["email"]))
-        return response.Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
     
