@@ -51,10 +51,10 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_('email address'), unique=True)
-    preferred_notification_hour = models.TimeField(default=timezone.now)
-    preferences = models.ManyToManyField('Preference', related_name='users')  # User's preferences
-    allergies = models.ManyToManyField('Allergy', related_name='users')  # User's allergies
-    saved_recipes = models.ManyToManyField('Recipe', related_name='saved_by_users')  # User's saved recipes
+    preferred_notification_hour = models.TimeField(default=timezone.now, blank=True)
+    preferences = models.ManyToManyField('Preference', related_name='users', blank=True)  # User's preferences
+    allergies = models.ManyToManyField('Allergy', related_name='users', blank=True)  # User's allergies
+    saved_recipes = models.ManyToManyField('Recipe', related_name='saved_by_users', blank=True)  # User's saved recipes
 
     # Define custom related names for groups and user_permissions to avoid conflicts
     groups = models.ManyToManyField(
