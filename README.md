@@ -15,3 +15,6 @@ Then open a web browser and go to http://127.0.0.1:8000/user/
 If you want to make any changes in the source code and then test in the web browser, please run the following coomands:<br>
 <b>python manage.py makemigrations<br>
 python manage.py migrate</b>
+
+If errors occur, try to run:<br>
+<b>pip install -r ./requirements.txt</b>
