@@ -12,11 +12,13 @@ class LoginView(generics.CreateAPIView):
     API View to log in a user and return a JWT token.
     """
     serializer_class = LoginSerializer
+    
     def create(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
         user = User.objects.get(email = serializer.validated_data['email'])
+
         if user.check_password(serializer.validated_data['password']):
 
             # Create tokens (access and refresh tokens)

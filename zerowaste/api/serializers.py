@@ -25,7 +25,4 @@ class UserSerializer(serializers.ModelSerializer):
             'preferences', 
             'allergies', 
             'saved_recipes', 
-            # 'is_active', 
-            # 'is_staff', 
-            # 'date_joined'
         ]
