@@ -14,23 +14,10 @@ class LoginView(generics.CreateAPIView):
     serializer_class = LoginSerializer
     
     def create(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            return Response(serializer.data["tokens"], status=status.HTTP_200_OK)
         
-        user = User.objects.get(email = serializer.validated_data['email'])
-
-        if user.check_password(serializer.validated_data['password']):
-
-            # Create tokens (access and refresh tokens)
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            # Return both refresh and access token
-            return Response({
-                'refresh_token': str(refresh),
-                'access_token': access_token,
-            }, status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -49,12 +36,10 @@ class RegisterView(generics.CreateAPIView):
         saved_recipes = serializer.validated_data['saved_recipes']
         
         
-        User.objects.create(
+        user = User.objects.create(
             email = serializer.validated_data["email"],
-            password = "")
-        user = User.objects.get(email=serializer.validated_data["email"])
-        user.set_password(serializer.validated_data["password"])
-        user.save()
+            password = serializer.validated_data["password"])
+        
         
         user.preferences.set(preferences)
         user.allergies.set(allergies)

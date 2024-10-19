@@ -2,7 +2,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password, check_password
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import (
+    AbstractBaseUser, BaseUserManager)
 
 # Create your custom models for Preferences, Allergies, and Recipe
 class Preference(models.Model):
@@ -27,23 +29,42 @@ class Recipe(models.Model):
         return self.name
 
 
-class User(models.Model):
-    email = models.EmailField(_('email address'), unique=True)
-    password = models.CharField(max_length=100)
+class UserManager(BaseUserManager):
+
+    def create(self, email, password=None):
+        if email is None:
+            raise TypeError('Users should have a Email')
+
+
+        user = self.model(email=self.normalize_email(email))
+        user.set_password(password)
+        user.save()
+        return user
+
+
+class User(AbstractBaseUser):
+    email = models.EmailField(_('email address'), unique=True, db_index=True)
     preferred_notification_hour = models.TimeField(default=timezone.now, blank=True)
     preferences = models.ManyToManyField('Preference', related_name='users', blank=True)  # User's preferences
     allergies = models.ManyToManyField('Allergy', related_name='users', blank=True)  # User's allergies
     saved_recipes = models.ManyToManyField('Recipe', related_name='saved_by_users', blank=True)  # User's saved recipes
+    is_verified = models.BooleanField(default=False) # User's email verification status
     
 
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
-
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
-
+    USERNAME_FIELD = 'email'
+    
+    
+    objects = UserManager()
+    
     def __str__(self):
         return self.email
+    
+    def tokens(self):
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }
     
 # Through model for handling the recipe rating
 class UserRecipeRating(models.Model):

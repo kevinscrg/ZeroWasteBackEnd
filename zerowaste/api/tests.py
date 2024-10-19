@@ -31,7 +31,7 @@ class UserLoginTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check if the response contains the token (if token authentication is used)
-        self.assertIn('token', response.data)  # Make sure token exists if you are using JWT or TokenAuth
+        self.assertIn('access', response.data)  # Make sure token exists if you are using JWT or TokenAuth
 
     def test_login_invalid_credentials(self):
         # Attempt to login with wrong credentials
