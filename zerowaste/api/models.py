@@ -33,7 +33,7 @@ class UserManager(BaseUserManager):
 
     def create(self, email, password=None):
         if email is None:
-            raise TypeError('Users should have a Email')
+            raise TypeError('Users should have an Email!')
 
 
         user = self.model(email=self.normalize_email(email))

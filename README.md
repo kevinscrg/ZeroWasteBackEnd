@@ -18,3 +18,15 @@ python manage.py migrate</b>
 
 If errors occur, try to run:<br>
 <b>pip install -r ./requirements.txt</b>
+
+
+
+PRODUCT - ENDPOINTS
+
+GET, CREATE
+http://127.0.0.1:8000/products/
+
+DELETE, PUT
+http://127.0.0.1:8000/products/id/
+
+
