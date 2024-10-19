@@ -68,23 +68,10 @@ class RegisterView(generics.CreateAPIView):
     
 
 
-class UserListView(generics.ListCreateAPIView):
+class UserListView(generics.ListAPIView):
     """
-    API view to retrieve list of users or create a new user.
+    API view to retrieve list of users
     """
-    queryset = User.objects.all()  
-    serializer_class = UserSerializer 
+    queryset = User.objects.all()  # QuerySet for all users
+    serializer_class = UserSerializer  # Serializer to handle User serialization
     permission_classes = [permissions.AllowAny]  
-
-    def get(self, request, *args, **kwargs):
-        """
-        Handle GET request to retrieve a list of users.
-        """
-        return super().get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        """
-        Handle POST request to create a new user.
-        """
-        return super().post(request, *args, **kwargs)
-
