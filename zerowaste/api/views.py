@@ -72,6 +72,6 @@ class UserListView(generics.ListAPIView):
     """
     API view to retrieve list of users
     """
-    queryset = User.objects.all()  # QuerySet for all users
-    serializer_class = UserSerializer  # Serializer to handle User serialization
+    queryset = User.objects.all()  
+    serializer_class = UserSerializer  
     permission_classes = [permissions.AllowAny]  
