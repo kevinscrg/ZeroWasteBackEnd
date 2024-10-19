@@ -14,24 +14,10 @@ class LoginView(generics.CreateAPIView):
     serializer_class = LoginSerializer
     
     def create(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
-        user = User.objects.get(email = serializer.validated_data['email'])
-
-        if user.check_password(serializer.validated_data['password']):
-
-            # Create tokens (access and refresh tokens)
-            token = user.tokens()
-            refresh = str(token["refresh"])
-            access_token = str(token["access"])
-
-            # Return both refresh and access token
-            return Response({'token' : {
-                'refresh_token': str(refresh), 
-                'access_token': access_token,
-            }}, status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
