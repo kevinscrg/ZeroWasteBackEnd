@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     "api",
     "product",
     "rest_framework",
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist'
 ]
 
 REST_FRAMEWORK = {
@@ -48,6 +49,9 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+AUTH_USER_MODEL = 'api.User'  
+
 
 # JWT settings (optional, you can adjust token lifetime)
 from datetime import timedelta
