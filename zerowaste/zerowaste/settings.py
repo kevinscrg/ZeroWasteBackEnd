@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-)dn0eeifdmtbr&*qxkvttqor9f$uk$w1l!)5j#7a_c45tad*17
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1'] 
+ALLOWED_HOSTS = ["192.168.100.92","192.168.100.79",'127.0.0.1'] 
 
 
 # Application definition
@@ -75,7 +75,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "zerowaste.urls"
-CORS_ALLOWED_ORIGINS = []  # aici se va adauga url-ul de unde ruleaza frontend (nu va dau ip-ul de la mn de acasa :)))) )
+CORS_ALLOWED_ORIGINS = ["http://192.168.100.79:8100"] 
 
 TEMPLATES = [
     {

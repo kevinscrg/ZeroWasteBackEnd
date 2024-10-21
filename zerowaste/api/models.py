@@ -44,11 +44,12 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     email = models.EmailField(_('email address'), unique=True, db_index=True)
-    preferred_notification_hour = models.TimeField(default=timezone.now, blank=True)
+    preferred_notification_hour = models.TimeField(blank=True, null=True)  # User's preferred notification hour
     preferences = models.ManyToManyField('Preference', related_name='users', blank=True)  # User's preferences
     allergies = models.ManyToManyField('Allergy', related_name='users', blank=True)  # User's allergies
     saved_recipes = models.ManyToManyField('Recipe', related_name='saved_by_users', blank=True)  # User's saved recipes
     is_verified = models.BooleanField(default=False) # User's email verification status
+    notification_day = models.IntegerField(blank = True, null= True)  # User's preferred notification day's before expiry
     
 
     USERNAME_FIELD = 'email'
