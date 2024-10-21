@@ -46,9 +46,11 @@ class LoginSerializer(serializers.Serializer):
         raise AuthenticationFailed('The password is incorrect!')
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(write_only=True, style={'input_type': 'password'})
+    
     class Meta:
         model = User
-        fields = ['email', 'password', 'preferred_notification_hour', 'preferences', 'allergies', 'saved_recipes']
+        fields = ['email', 'password', 'confirm_password']
 
 
     def validate_email(self, value):
@@ -56,17 +58,23 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('User with this email already exists!')
         return value
     
+    
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError('Passwords do not match!')
+        self.validate_email(data['email'])
+        return data
+    
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 
             'email', 
             'preferred_notification_hour', 
             'preferences', 
             'allergies', 
-            'saved_recipes', 
+            'notification_day'
         ]
         
         
