@@ -14,8 +14,8 @@ class LoginSerializer(serializers.Serializer):
         user = User.objects.get(email=obj['email'])
 
         return {
-            'refresh': user.tokens()['refresh'],
-            'access': user.tokens()['access']
+            'access': user.tokens()['access'],
+            'refresh': user.tokens()['refresh']
         }   
         
     class Meta:

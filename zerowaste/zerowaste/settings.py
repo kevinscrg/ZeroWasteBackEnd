@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-)dn0eeifdmtbr&*qxkvttqor9f$uk$w1l!)5j#7a_c45tad*17
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1'] 
 
 
 # Application definition
@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     "product",
     "rest_framework",
     'rest_framework.authtoken',
-    'rest_framework_simplejwt.token_blacklist'
+    'rest_framework_simplejwt.token_blacklist',
+    "corsheaders",
 ]
 
 REST_FRAMEWORK = {
@@ -63,6 +64,7 @@ SIMPLE_JWT = {
 
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -73,6 +75,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "zerowaste.urls"
+CORS_ALLOWED_ORIGINS = []  # aici se va adauga url-ul de unde ruleaza frontend (nu va dau ip-ul de la mn de acasa :)))) )
 
 TEMPLATES = [
     {
