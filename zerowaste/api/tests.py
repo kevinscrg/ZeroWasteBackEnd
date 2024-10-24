@@ -141,36 +141,19 @@ class UserLogoutTest(TestCase):
 class DeleteAccountTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user1 = User.objects.create(email="user1@example.com")
-        self.user1.set_password("password123")
-        self.user1.save()
-
-        self.user2 = User.objects.create(email="user2@example.com")
-        self.user2.set_password("password123")
-        self.user2.save()
-
-        self.delete_account_url_user1 = reverse('delete-account', kwargs={'user_id': self.user1.id})
-        self.delete_account_url_user2 = reverse('delete-account', kwargs={'user_id': self.user2.id})
-
-        response = self.client.post(reverse('login'), {'email': 'user1@example.com', 'password': 'password123'})
-        self.user1_token = response.data['access']
-
+        self.user = User.objects.create(email="user@example.com")
+        self.user.set_password("password123")
+        self.user.save()
+        response = self.client.post(reverse('login'), {'email': 'user@example.com', 'password': 'password123'})
+        self.user_token = response.data['access']
 
     def test_delete_own_account(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.user1_token)
-        response = self.client.delete(self.delete_account_url_user1)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.user_token)
+        response = self.client.delete(reverse('delete-account'))  
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(User.objects.filter(id=self.user1.id).exists())
-   
-   
-    def test_delete_other_user_account(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.user1_token)
-        response = self.client.delete(self.delete_account_url_user2)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertTrue(User.objects.filter(id=self.user2.id).exists())
+        self.assertFalse(User.objects.filter(id=self.user.id).exists())
 
-
+    
     def test_delete_without_authentication(self):
-        response = self.client.delete(self.delete_account_url_user1)
+        response = self.client.delete(reverse('delete-account'))  
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-

@@ -91,12 +91,7 @@ class DeleteAccountView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, user_id, *args, **kwargs):
-        if request.user.id != user_id:
-            return Response(
-                {"detail": "You can only delete your own account."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        user_to_delete = get_object_or_404(User, id=user_id)
+    def delete(self, request, *args, **kwargs):
+        user_to_delete = request.user
         user_to_delete.delete()
         return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
