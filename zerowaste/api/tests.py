@@ -149,10 +149,17 @@ class DeleteAccountTests(TestCase):
 
     def test_delete_own_account(self):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.user_token)
-        response = self.client.delete(reverse('delete-account'))  
+        response = self.client.delete(reverse('delete-account'), data={'password': 'password123'})  
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(User.objects.filter(id=self.user.id).exists())
 
+    def test_delete_account_with_wrong_password(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.user_token)
+        response = self.client.delete(reverse('delete-account'), data={'password': 'pass'})  
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(User.objects.filter(id=self.user.id).exists())
+                                
+    
     
     def test_delete_without_authentication(self):
         response = self.client.delete(reverse('delete-account'))  
