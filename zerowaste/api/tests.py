@@ -50,14 +50,12 @@ class UserRegistrationTest(TestCase):
         self.recipe1 = Recipe.objects.create(name='Recipe1')
         
         
-        self.existing_email = 'admin@example.com'
+        self.existing_email = 'try@gmail.com'
         self.existing_password = 'strong_password'
         self.client.post(self.register_url, {
             'email': self.existing_email,
             'password': self.existing_password,
-            'preferences': [self.preference1.id],  
-            'allergies': [self.allergy1.id],      
-            'saved_recipes': [self.recipe1.id]     
+            'confirm_password': self.existing_password
         }, format='json')
         
 
@@ -66,9 +64,7 @@ class UserRegistrationTest(TestCase):
         register_data = {
             'email': 'newuser@example.com',
             'password': 'strong_password',
-            'preferences': [self.preference1.id],  
-            'allergies': [self.allergy1.id],      
-            'saved_recipes': [self.recipe1.id]     
+            'confirm_password': 'strong_password',
         }
 
         response = self.client.post(self.register_url, register_data, format='json')
@@ -77,19 +73,13 @@ class UserRegistrationTest(TestCase):
         self.assertNotIn('password', response.data)  
         self.assertTrue(User.objects.filter(email=register_data['email']).exists())
 
-        user = User.objects.get(email=register_data['email'])
-        self.assertEqual(list(user.preferences.all()), [self.preference1])
-        self.assertEqual(list(user.allergies.all()), [self.allergy1])
-        self.assertEqual(list(user.saved_recipes.all()), [self.recipe1])
 
 
     def test_register_duplicate_email(self):
         register_data = {
             'email': self.existing_email,  # Use the existing email
-            'password': 'strong_password',
-            'preferences': [self.preference1.id],  
-            'allergies': [self.allergy1.id],      
-            'saved_recipes': [self.recipe1.id]     
+            'password': 'strong_password2',
+            'confirm_password': 'strong_password2',
         }
 
         response = self.client.post(self.register_url, register_data, format='json')
@@ -107,9 +97,6 @@ class UserRegistrationTest(TestCase):
     def test_register_invalid_data(self):
         register_data = {
             'password': 'password_without_email',
-            'preferences': [],
-            'allergies': [],
-            'saved_recipes': []
         }
         response = self.client.post(self.register_url, register_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -127,9 +114,7 @@ class UserLogoutTest(TestCase):
         self.user_data = {
             'email': 'testuser@example.com',
             'password': 'password123',
-            'preferences': [],
-            'allergies': [],
-            'saved_recipes': []
+            'confirm_password': 'password123',
         }
         self.client.post(self.register_url, self.user_data, format='json')
 
@@ -137,7 +122,8 @@ class UserLogoutTest(TestCase):
         # Test successful login
         response = self.client.post(self.login_url, {
             'email': self.user_data['email'],
-            'password': self.user_data['password']
+            'password': self.user_data['password'],
+            'confirm_password': self.user_data['confirm_password']
         }, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

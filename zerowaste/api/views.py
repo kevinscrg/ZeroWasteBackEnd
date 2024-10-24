@@ -17,7 +17,6 @@ class LoginView(generics.CreateAPIView):
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
         
-        print(request.data)
         
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data["tokens"], status=status.HTTP_200_OK)
