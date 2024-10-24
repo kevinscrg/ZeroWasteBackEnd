@@ -97,9 +97,6 @@ class UserRegistrationTest(TestCase):
     def test_register_invalid_data(self):
         register_data = {
             'password': 'password_without_email',
-            'preferences': [],
-            'allergies': [],
-            'saved_recipes': []
         }
         response = self.client.post(self.register_url, register_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -118,9 +115,6 @@ class UserLogoutTest(TestCase):
             'email': 'testuser@example.com',
             'password': 'password123',
             'confirm_password': 'password123',
-            'preferences': [],
-            'allergies': [],
-            'saved_recipes': []
         }
         self.client.post(self.register_url, self.user_data, format='json')
 
