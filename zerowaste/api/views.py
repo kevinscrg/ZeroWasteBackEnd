@@ -28,12 +28,13 @@ class LogoutView(generics.GenericAPIView):
     """
     API View to log out a user.
     """
+    permission_classes = [IsAuthenticated]
     serializer_class = LogoutSerializer
 
-    permission_classes = (permissions.IsAuthenticated,)
+    
 
     def post(self, request):
-
+        
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -93,5 +94,8 @@ class DeleteAccountView(APIView):
 
     def delete(self, request, *args, **kwargs):
         user_to_delete = request.user
-        user_to_delete.delete()
-        return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        
+        if(user_to_delete.check_password(request.data["password"])):
+            user_to_delete.delete()
+            return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "wrong password"}, status=status.HTTP_401_UNAUTHORIZED)
