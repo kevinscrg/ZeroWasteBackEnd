@@ -88,9 +88,6 @@ class UserRegistrationTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
         self.assertIn('email', response.data) 
         
-        # TODO - solve error in tests.py, in the localhost it works, ma dau batuta
-        # expected_error_message = "User with this email already exists!"
-        # self.assertEqual(response.data['email'][0], expected_error_message)
         
 
 
