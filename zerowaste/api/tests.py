@@ -44,12 +44,9 @@ class UserRegistrationTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.register_url = reverse('register')   
-
         self.preference1 = Preference.objects.create(name='Preference1')
         self.allergy1 = Allergy.objects.create(name='Allergy1')
         self.recipe1 = Recipe.objects.create(name='Recipe1')
-        
-        
         self.existing_email = 'try@gmail.com'
         self.existing_password = 'strong_password'
         self.client.post(self.register_url, {
@@ -74,23 +71,17 @@ class UserRegistrationTest(TestCase):
         self.assertTrue(User.objects.filter(email=register_data['email']).exists())
 
 
-
     def test_register_duplicate_email(self):
         register_data = {
             'email': self.existing_email,  # Use the existing email
             'password': 'strong_password2',
             'confirm_password': 'strong_password2',
         }
-
         response = self.client.post(self.register_url, register_data, format='json')
-
-  
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
         self.assertIn('email', response.data) 
         
         
-
-
     def test_register_invalid_data(self):
         register_data = {
             'password': 'password_without_email',
@@ -115,6 +106,7 @@ class UserLogoutTest(TestCase):
         }
         self.client.post(self.register_url, self.user_data, format='json')
 
+
     def test_login_success(self):
         # Test successful login
         response = self.client.post(self.login_url, {
@@ -125,6 +117,7 @@ class UserLogoutTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
+
 
     def test_logout_success(self):
         # Login to get tokens
@@ -144,7 +137,23 @@ class UserLogoutTest(TestCase):
 
         self.assertEqual(logout_response.status_code, status.HTTP_204_NO_CONTENT)
         
+        
+class DeleteAccountTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create(email="user@example.com")
+        self.user.set_password("password123")
+        self.user.save()
+        response = self.client.post(reverse('login'), {'email': 'user@example.com', 'password': 'password123'})
+        self.user_token = response.data['access']
 
+    def test_delete_own_account(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.user_token)
+        response = self.client.delete(reverse('delete-account'))  
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(User.objects.filter(id=self.user.id).exists())
 
-
-
+    
+    def test_delete_without_authentication(self):
+        response = self.client.delete(reverse('delete-account'))  
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

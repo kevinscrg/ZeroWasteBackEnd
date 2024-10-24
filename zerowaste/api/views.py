@@ -6,7 +6,7 @@ from .serializers import LoginSerializer,LogoutSerializer, UserRegistrationSeria
 from rest_framework import generics, permissions
 from .models import User
 from rest_framework.permissions import IsAuthenticated
-
+from django.shortcuts import get_object_or_404
 
 class LoginView(generics.CreateAPIView):
     """
@@ -64,9 +64,6 @@ class RegisterView(generics.CreateAPIView):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-    
-
-
 class UserListView(generics.ListAPIView):
     """
     API view to retrieve list of users
@@ -85,3 +82,16 @@ class UserDetailView(generics.RetrieveAPIView):
     def get(self, request):
         serializer = UserSerializer(self.get_object())
         return Response(serializer.data)
+    
+    
+
+class DeleteAccountView(APIView):
+    """
+    API view to allow authenticated users to delete their own account.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        user_to_delete = request.user
+        user_to_delete.delete()
+        return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
