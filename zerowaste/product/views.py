@@ -4,7 +4,6 @@ from .models import Product
 from .serializers import ProductSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import UserProductList
 from .serializers import UserProductListSerializer
 from rest_framework.permissions import IsAuthenticated
 
