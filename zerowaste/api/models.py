@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager)
+from product.models import UserProductList
 
 # Create your custom models for Preferences, Allergies, and Recipe
 class Preference(models.Model):
@@ -49,6 +50,7 @@ class User(AbstractBaseUser):
     saved_recipes = models.ManyToManyField('Recipe', related_name='saved_by_users', blank=True)  # User's saved recipes
     is_verified = models.BooleanField(default=False) # User's email verification status
     notification_day = models.IntegerField(blank = True, null= True)  # User's preferred notification day's before expiry
+    product_list = models.ForeignKey(UserProductList, on_delete=models.DO_NOTHING, blank=True, null=True)  # User's product list
     
 
     USERNAME_FIELD = 'email'

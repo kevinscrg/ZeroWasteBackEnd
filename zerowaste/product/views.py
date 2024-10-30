@@ -16,17 +16,7 @@ class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
     
-    
-    # Will implement later -> adding authentication and filtering the data based on the authenticated user
-    
-    # permission_classes = (permissions.IsAuthenticated,)
 
-    # def perform_create(self, serializer):
-    #     return serializer.save(owner=self.request.user)
-
-    # def get_queryset(self):
-    #     return self.queryset.filter(owner=self.request.user)
-    
     
     
 #Handles GET, PUT, PATCH, DELETE
@@ -39,56 +29,58 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
 
     lookup_field = "id"
-    
-    # Will implement later -> adding authentication and filtering the data based on the authenticated user
-    
-    # def get_queryset(self):
-    #     return self.queryset.filter(owner=self.request.user) 
-    
+
+
+#? -------------------------------------------------------------------------
+
 
 class UserProductListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_product_lists = UserProductList.objects.filter(owner=request.user)
-        serializer = UserProductListSerializer(user_product_lists, many=True)
+        user_product_lists = request.user.product_list
+        serializer = UserProductListSerializer(user_product_lists)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = UserProductListSerializer(data=request.data)
+        serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(owner=request.user)  # Set the owner to the authenticated user
+            user_product_lists = request.user.product_list
+            user_product_lists.products.add(serializer.save())
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserProductListDetailView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
-        try:
-            user_product_list = UserProductList.objects.get(pk=pk, owner=request.user)
-        except UserProductList.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = UserProductListSerializer(user_product_list)
-        return Response(serializer.data)
 
-    def put(self, request, pk):
-        try:
-            user_product_list = UserProductList.objects.get(pk=pk, owner=request.user)
-        except UserProductList.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+# class UserProductListDetailView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-        serializer = UserProductListSerializer(user_product_list, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def get(self, request, pk):
+#         try:
+#             user_product_list = UserProductList.objects.get(pk=pk, owner=request.user)
+#         except UserProductList.DoesNotExist:
+#             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, request, pk):
-        try:
-            user_product_list = UserProductList.objects.get(pk=pk, owner=request.user)
-            user_product_list.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except UserProductList.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+#         serializer = UserProductListSerializer(user_product_list)
+#         return Response(serializer.data)
+
+#     def put(self, request, pk):
+#         try:
+#             user_product_list = UserProductList.objects.get(pk=pk, owner=request.user)
+#         except UserProductList.DoesNotExist:
+#             return Response(status=status.HTTP_404_NOT_FOUND)
+
+#         serializer = UserProductListSerializer(user_product_list, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     def delete(self, request, pk):
+#         try:
+#             user_product_list = UserProductList.objects.get(pk=pk, owner=request.user)
+#             user_product_list.delete()
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         except UserProductList.DoesNotExist:
+#             return Response(status=status.HTTP_404_NOT_FOUND)
