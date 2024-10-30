@@ -4,8 +4,7 @@ from .models import Product, UserProductList
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 
-                  'name', 
+        fields = ['name', 
                   'best_before', 
                   'consumption_days', 
                   'opened']
@@ -14,7 +13,7 @@ class UserProductListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProductList
-        fields = ['products']
+        fields = ['share_code','products']
 
     def create(self, validated_data):
         # Extract product data from the validated data

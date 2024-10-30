@@ -1,5 +1,4 @@
 from django.db import models
-from api.models import User
 class Product(models.Model):
     name = models.CharField(max_length=255)
     best_before = models.DateField()
@@ -10,8 +9,8 @@ class Product(models.Model):
         return self.name
 
 class UserProductList(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    share_code = models.CharField(max_length=6, unique=True) # we will use this code to share the product list with other users
     products = models.ManyToManyField(Product)
 
     def __str__(self):
-        return f"{self.owner.email}'s Product List"
+        return self.share_code

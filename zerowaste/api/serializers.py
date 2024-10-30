@@ -1,7 +1,10 @@
+import random
+import string
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework import serializers
+from product.models import UserProductList
 from .models import User
 
 class LoginSerializer(serializers.Serializer):
@@ -96,3 +99,20 @@ class LogoutSerializer(serializers.Serializer):
 
         except TokenError:
             self.fail('bad_token')       
+
+
+class VerifyUserSerializer(serializers.Serializer):
+    def generate_unique_share_code(self):
+        while True:
+            share_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            if not UserProductList.objects.filter(share_code=share_code).exists():
+                return share_code
+            
+            
+class ChangeUserListSerializer(serializers.Serializer):
+    share_code = serializers.CharField()
+    
+    def validate_share_code(self, value):
+        if not UserProductList.objects.filter(share_code=value).exists():
+            raise serializers.ValidationError('Invalid share code!')
+        return value
