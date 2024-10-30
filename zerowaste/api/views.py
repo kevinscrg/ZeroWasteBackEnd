@@ -125,8 +125,7 @@ class VerifyUserView(APIView):
     
     
 class ChangeUserListView(APIView):
-    
-    permissions_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
     serializer_class = ChangeUserListSerializer
     
     def post(self, request):
@@ -135,9 +134,15 @@ class ChangeUserListView(APIView):
         if serializer.is_valid(raise_exception=True):
             user = request.user
             old_product_list = user.product_list
-            user.product_list = UserProductList.objects.get(share_code=serializer.validated_data["share_code"])
+            try:
+                user.product_list = UserProductList.objects.get(share_code=serializer.validated_data["share_code"])
+            except UserProductList.DoesNotExist:
+                return Response({"detail": "Product list with provided share code does not exist."}, status=status.HTTP_404_NOT_FOUND)
+            
             user.save()
-            if User.objects.get(product_list = old_product_list).count() == 0:
+            if User.objects.filter(product_list=old_product_list).count() == 0:
                 old_product_list.delete()
+                
             return Response({"detail": "Product list updated successfully."}, status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
