@@ -46,5 +46,6 @@ class UserProductListView(APIView):
         if serializer.is_valid():
             user_product_lists = request.user.product_list
             user_product_lists.products.add(serializer.save())
+            user_product_lists.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
