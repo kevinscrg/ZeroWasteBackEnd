@@ -1,7 +1,7 @@
 from rest_framework import serializers # type: ignore
 from .models import Product, UserProductList
 
-class ProductSerializer(serializers.ModelSerializer):
+class CreateProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['name', 
@@ -9,7 +9,8 @@ class ProductSerializer(serializers.ModelSerializer):
                     'consumption_days', 
                     'opened']
         
-class UpdateProductSerializer(serializers.ModelSerializer):
+class ProductSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
     class Meta:
         model = Product
         fields = ['id',
@@ -19,11 +20,13 @@ class UpdateProductSerializer(serializers.ModelSerializer):
                     'opened']
 
 class DeleteProductSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
     class Meta:
         model = Product
         fields = ['id']
         
     def validate(self, data):
+        print(data)
         if not Product.objects.filter(id=data['id']).exists():
             raise serializers.ValidationError('Product with this id does not exist!')
         return data
@@ -50,25 +53,3 @@ class UserProductListSerializer(serializers.ModelSerializer):
 
         return user_product_list
     
-    def update(self, instance, validated_data):
-        # Update the products list
-        products_data = validated_data.pop('products', [])
-        
-        # Clear existing products
-        instance.products.clear()
-        
-        # Create and add new products to the instance
-        for product_data in products_data:
-            product, created = Product.objects.update_or_create(
-                id=product_data.get('id'),
-                defaults={
-                    'name': product_data.get('name'),
-                    'best_before': product_data.get('best_before'),
-                    'consumption_days': product_data.get('consumption_days'),
-                    'opened': product_data.get('opened'),
-                }
-            )
-            instance.products.add(product)
-        
-        instance.save()
-        return instance
