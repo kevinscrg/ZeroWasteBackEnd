@@ -1,14 +1,14 @@
-from django.test import TestCase
+from django.test import TestCase # type: ignore
 
 from api.models import User
 from .models import Product
-from django.utils import timezone
+from django.utils import timezone # type: ignore
 from datetime import timedelta
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase
-from .models import Product, UserProductList
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.urls import reverse # type: ignore
+from rest_framework import status # type: ignore
+from rest_framework.test import APITestCase # type: ignore
+from .models import Product
+from rest_framework_simplejwt.tokens import RefreshToken # type: ignore
 
 class ProductModelTest(TestCase):
 
