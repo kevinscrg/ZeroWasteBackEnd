@@ -141,6 +141,8 @@ class ChangeUserListView(APIView):
             
             user.save()
             if User.objects.filter(product_list=old_product_list).count() == 0:
+                for product in old_product_list.products.all():
+                    product.delete()
                 old_product_list.delete()
                 
             return Response({"detail": "Product list updated successfully."}, status=status.HTTP_200_OK)

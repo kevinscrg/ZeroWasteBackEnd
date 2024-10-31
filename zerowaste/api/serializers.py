@@ -1,9 +1,9 @@
 import random
 import string
-from django.contrib.auth import authenticate
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-from rest_framework import serializers
+from django.contrib.auth import authenticate # type: ignore
+from rest_framework.exceptions import AuthenticationFailed # type: ignore
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError # type: ignore
+from rest_framework import serializers # type: ignore
 from product.models import UserProductList
 from .models import User
 

@@ -1,12 +1,11 @@
 
-from rest_framework import generics, status
+from rest_framework import generics, status  # type: ignore
+from rest_framework.views import APIView # type: ignore
+from rest_framework.response import Response # type: ignore
+from rest_framework.permissions import IsAuthenticated # type: ignore
+
 from .models import Product
-from .serializers import ProductSerializer
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import UserProductList
-from .serializers import UserProductListSerializer
-from rest_framework.permissions import IsAuthenticated
+from .serializers import DeleteProductSerializer, CreateProductSerializer, UserProductListSerializer, ProductSerializer
 
 #Handles GET and POST
 class ProductListCreateView(generics.ListCreateAPIView):
@@ -43,10 +42,35 @@ class UserProductListView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = ProductSerializer(data=request.data)
+        serializer = CreateProductSerializer(data=request.data)
         if serializer.is_valid():
             user_product_lists = request.user.product_list
             user_product_lists.products.add(serializer.save())
             user_product_lists.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request):
+        user_product_lists = request.user.product_list
+        serializer = ProductSerializer(data=request.data)  
+        if serializer.is_valid():
+            print(serializer.validated_data)
+            product_to_update = user_product_lists.products.get(id=serializer.validated_data['id'])
+            product_to_update.name = serializer.validated_data['name'] if 'name' in serializer.validated_data else product_to_update.name
+            product_to_update.best_before = serializer.validated_data['best_before'] if 'best_before' in serializer.validated_data else product_to_update.best_before
+            product_to_update.consumption_days = serializer.validated_data['consumption_days'] if 'consumption_days' in serializer.validated_data else product_to_update.consumption_days
+            product_to_update.opened = serializer.validated_data['opened'] if 'opened' in serializer.validated_data else product_to_update.opened
+            product_to_update.save()
+            return Response(ProductSerializer(product_to_update).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        user_product_lists = request.user.product_list
+        serializer = DeleteProductSerializer(data=request.data)
+        if serializer.is_valid():
+            product_to_delete = user_product_lists.products.get(id=serializer.validated_data['id'])
+            user_product_lists.products.remove(product_to_delete)
+            product_to_delete.delete()
+            user_product_lists.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
