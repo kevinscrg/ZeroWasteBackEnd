@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models # type: ignore
 class Product(models.Model):
     name = models.CharField(max_length=255)
     best_before = models.DateField()

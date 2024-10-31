@@ -1,13 +1,33 @@
-from rest_framework import serializers
+from rest_framework import serializers # type: ignore
 from .models import Product, UserProductList
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['name', 
-                  'best_before', 
-                  'consumption_days', 
-                  'opened']
+                    'best_before', 
+                    'consumption_days', 
+                    'opened']
+        
+class UpdateProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id',
+                    'name', 
+                    'best_before', 
+                    'consumption_days', 
+                    'opened']
+
+class DeleteProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id']
+        
+    def validate(self, data):
+        if not Product.objects.filter(id=data['id']).exists():
+            raise serializers.ValidationError('Product with this id does not exist!')
+        return data
+
 class UserProductListSerializer(serializers.ModelSerializer):
     products = ProductSerializer(many=True)
 
