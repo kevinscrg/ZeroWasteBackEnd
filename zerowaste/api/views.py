@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import ChangeUserListSerializer, LoginSerializer,LogoutSerializer, UserRegistrationSerializer, UserSerializer, VerifyUserSerializer
+from .serializers import ChangeUserListSerializer, CollaboratorSerializer, LoginSerializer,LogoutSerializer, UserRegistrationSerializer, UserSerializer, VerifyUserSerializer
 from rest_framework import generics, permissions
 from .models import User
 from rest_framework.permissions import IsAuthenticated
@@ -148,3 +148,13 @@ class ChangeUserListView(APIView):
             return Response({"detail": "Product list updated successfully."}, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class GetCollaboratorsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        product_list = user.product_list
+        collaborators = User.objects.filter(product_list=product_list).exclude(id=user.id)
+        serializer = CollaboratorSerializer(collaborators, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
