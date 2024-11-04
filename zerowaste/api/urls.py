@@ -10,4 +10,5 @@ urlpatterns = [
     path('delete-account/', DeleteAccountView.as_view(), name='delete-account'),
     path('verify-email/', VerifyUserView.as_view(), name='verify-email'),
     path('change-list/', ChangeUserListView.as_view(), name='change-list'),
+    path('collaborators/', GetCollaboratorsView.as_view(), name='list-collaborators'),
 ]
