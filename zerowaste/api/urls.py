@@ -11,4 +11,10 @@ urlpatterns = [
     path('verify-email/', VerifyUserView.as_view(), name='verify-email'),
     path('change-list/', ChangeUserListView.as_view(), name='change-list'),
     path('collaborators/', GetCollaboratorsView.as_view(), name='list-collaborators'),
+    path('user/update/preferred_notification_hour/<str:new_hour>/', PreferredNotificationHourUpdateView.as_view(),
+         name='update-preferred-notification-hour'),
+    path('user/update/preferences/', PreferencesUpdateView.as_view(), name='update-preferences'),
+    path('user/update/allergies/', AllergiesUpdateView.as_view(), name='update-allergies'),
+    path('user/update/notification_day/<int:new_day>/', NotificationDayUpdateView.as_view(),
+         name='update-notification-day'),
 ]
