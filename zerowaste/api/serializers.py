@@ -77,15 +77,25 @@ class UserSerializer(serializers.ModelSerializer):
             'notification_day'
         ]
 
-class UserUpdateSerializer(serializers.ModelSerializer):
+class PreferredNotificationHourUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = [
-            'preferred_notification_hour',
-            'preferences',
-            'allergies',
-            'notification_day',
-        ]
+        fields = ['preferred_notification_hour']
+
+class PreferencesUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['preferences']
+
+class AllergiesUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['allergies']
+
+class NotificationDayUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['notification_day']
         
         
 class LogoutSerializer(serializers.Serializer):

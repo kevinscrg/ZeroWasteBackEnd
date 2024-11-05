@@ -1,11 +1,21 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import LoginSerializer,LogoutSerializer, UserRegistrationSerializer, UserSerializer, UserUpdateSerializer
 from rest_framework import generics, permissions
 from .models import User
 from rest_framework.permissions import IsAuthenticated
+
+from .serializers import (
+    LoginSerializer,
+    LogoutSerializer, 
+    UserRegistrationSerializer, 
+    UserSerializer,
+    PreferredNotificationHourUpdateSerializer,
+    PreferencesUpdateSerializer,
+    AllergiesUpdateSerializer,
+    NotificationDayUpdateSerializer,
+)
+from datetime import time
 
 
 class LoginView(generics.CreateAPIView):
@@ -83,12 +93,80 @@ class UserDetailView(generics.RetrieveAPIView):
     def get(self, request):
         serializer = UserSerializer(self.get_object())
         return Response(serializer.data)
-    
-class UserUpdateAPIView(APIView):
-    queryset = User.objects.all()
-    serializer_class = UserUpdateSerializer
+
+class PreferredNotificationHourUpdateView(generics.UpdateAPIView):
+    serializer_class = PreferredNotificationHourUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        # Return the authenticated user to ensure only they can update their profile
         return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        new_hour = self.kwargs.get("new_hour")
+        try:
+            hour, minute, second = map(int, new_hour.split(":"))
+            time_value = time(hour, minute, second)
+        except ValueError:
+            return Response({"error": "Invalid time format. Use HH:MM:SS."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        user = self.get_object()
+        user.preferred_notification_hour = time_value
+        user.save()
+
+        return Response({"preferred_notification_hour": user.preferred_notification_hour},
+                        status=status.HTTP_200_OK)
+
+class PreferencesUpdateView(generics.UpdateAPIView):
+    serializer_class = PreferencesUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        new_preferences = request.data.get("preferences", [])
+        user = self.get_object()
+        user.preferences.set(new_preferences)
+        user.save()
+        return Response({"preferences": [pref.id for pref in user.preferences.all()]},
+                        status=status.HTTP_200_OK)
+
+class AllergiesUpdateView(generics.UpdateAPIView):
+    serializer_class = AllergiesUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        new_allergies = request.data.get("allergies", [])
+        user = self.get_object()
+        user.allergies.set(new_allergies)
+        user.save()
+        return Response({"allergies": [allergy.id for allergy in user.allergies.all()]},
+                        status=status.HTTP_200_OK)
+
+class NotificationDayUpdateView(generics.UpdateAPIView):
+    serializer_class = NotificationDayUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        new_day = self.kwargs.get("new_day")
+        try:
+            day_value = int(new_day)
+            if day_value < 0:
+                raise ValueError("Day must be a positive integer.")
+        except ValueError:
+            return Response({"error": "Invalid day. Provide a positive integer."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        user = self.get_object()
+        user.notification_day = day_value
+        user.save()
+
+        return Response({"notification_day": user.notification_day},
+                        status=status.HTTP_200_OK)
