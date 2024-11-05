@@ -76,6 +76,16 @@ class UserSerializer(serializers.ModelSerializer):
             'allergies', 
             'notification_day'
         ]
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'preferred_notification_hour',
+            'preferences',
+            'allergies',
+            'notification_day',
+        ]
         
         
 class LogoutSerializer(serializers.Serializer):

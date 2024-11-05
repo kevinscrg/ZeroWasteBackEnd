@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import LoginSerializer,LogoutSerializer, UserRegistrationSerializer, UserSerializer
+from .serializers import LoginSerializer,LogoutSerializer, UserRegistrationSerializer, UserSerializer, UserUpdateSerializer
 from rest_framework import generics, permissions
 from .models import User
 from rest_framework.permissions import IsAuthenticated
@@ -65,9 +65,6 @@ class RegisterView(generics.CreateAPIView):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-    
-
-
 class UserListView(generics.ListAPIView):
     """
     API view to retrieve list of users
@@ -86,3 +83,12 @@ class UserDetailView(generics.RetrieveAPIView):
     def get(self, request):
         serializer = UserSerializer(self.get_object())
         return Response(serializer.data)
+    
+class UserUpdateAPIView(APIView):
+    queryset = User.objects.all()
+    serializer_class = UserUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        # Return the authenticated user to ensure only they can update their profile
+        return self.request.user
