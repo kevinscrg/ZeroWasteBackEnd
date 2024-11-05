@@ -2,7 +2,9 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
+from django.contrib.auth import get_user_model
 from api.models import User, Preference, Allergy, Recipe 
+from datetime import time
 
 class UserLoginTest(TestCase):
     def setUp(self):
@@ -161,6 +163,62 @@ class UserLogoutTest(TestCase):
 
         self.assertEqual(logout_response.status_code, status.HTTP_204_NO_CONTENT)
         
+User = get_user_model()
+
+class UserUpdateTests(TestCase):
+    def setUp(self):
+        # Create a test user
+        self.user = User.objects.create(
+            email='darius@test.org',
+            password='root'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_update_preferred_notification_hour(self):
+        # Ensure the URL matches the exact pattern defined
+        url = reverse('update-preferred-notification-hour', kwargs={'new_hour': '14:30:00'})
+        response = self.client.patch(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.preferred_notification_hour, time(14, 30))
+
+    def test_update_preferences(self):
+        # Assuming there are some preferences in the database
+        preference_ids = [1, 2]  # Replace with actual IDs from the setup
+        url = reverse('update/preferences')
+        response = self.client.patch(url, {'preferences': preference_ids}, format='json')
+
+        # Check if response is successful
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check if preferences were updated
+        self.user.refresh_from_db()
+        self.assertEqual(list(self.user.preferences.values_list('id', flat=True)), preference_ids)
+
+    def test_update_allergies(self):
+        # Assuming there are some allergies in the database
+        allergy_ids = [1, 2]  # Replace with actual IDs from the setup
+        url = reverse('update/allergies')
+        response = self.client.patch(url, {'allergies': allergy_ids}, format='json')
+
+        # Check if response is successful
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check if allergies were updated
+        self.user.refresh_from_db()
+        self.assertEqual(list(self.user.allergies.values_list('id', flat=True)), allergy_ids)
+
+    def test_update_notification_day(self):
+        url = reverse('update/notification-day', kwargs={'new_day': 3})
+        response = self.client.patch(url)
+
+        # Check if response is successful
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check if notification_day was updated
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.notification_day, 3)
+
+
 
 
 
