@@ -125,3 +125,23 @@ class CollaboratorSerializer(serializers.Serializer):
         if not User.objects.filter(email=value).exists():
             raise serializers.ValidationError('User with this email does not exist!')
         return value
+
+class PreferredNotificationHourUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['preferred_notification_hour']
+
+class PreferencesUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['preferences']
+
+class AllergiesUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['allergies']
+
+class NotificationDayUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['notification_day']
