@@ -5,6 +5,7 @@
 *.sqlite
 *.sqlite3
 db.sqlite3
+*.pyc
 
 # Ignore Django migration files
 **/migrations/*
