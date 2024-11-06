@@ -70,6 +70,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
 
 class UserSerializer(serializers.ModelSerializer):
+    preferences = serializers.SerializerMethodField()
+    allergies = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -79,7 +82,14 @@ class UserSerializer(serializers.ModelSerializer):
             'allergies', 
             'notification_day'
         ]
-        
+
+    def get_preferences(self, obj):
+        # Devuelve una lista de nombres de preferencias
+        return [preference.name for preference in obj.preferences.all()]
+
+    def get_allergies(self, obj):
+        # Devuelve una lista de nombres de alergias
+        return [allergy.name for allergy in obj.allergies.all()]
         
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()

@@ -17,7 +17,7 @@ from .serializers import ( ChangeUserListSerializer,
     NotificationDayUpdateSerializer
 )
 from rest_framework import generics, permissions
-from .models import User
+from .models import Allergy, Preference, User
 from rest_framework.permissions import IsAuthenticated
 from datetime import time
 
@@ -172,13 +172,13 @@ class GetCollaboratorsView(APIView):
 
 class PreferredNotificationHourUpdateView(generics.UpdateAPIView):
     serializer_class = PreferredNotificationHourUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
-        new_hour = self.kwargs.get("new_hour")
+        new_hour = self.kwargs.get("new_hour")+":00"
         try:
             hour, minute, second = map(int, new_hour.split(":"))
             time_value = time(hour, minute, second)
@@ -195,13 +195,17 @@ class PreferredNotificationHourUpdateView(generics.UpdateAPIView):
 
 class PreferencesUpdateView(generics.UpdateAPIView):
     serializer_class = PreferencesUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
-        new_preferences = request.data.get("preferences", [])
+        new_preferences_names = request.data.get("preferences", [])
+        
+        new_preferences = Preference.objects.filter(name__in=new_preferences_names)
+        
+        
         user = self.get_object()
         user.preferences.set(new_preferences)
         user.save()
@@ -210,13 +214,17 @@ class PreferencesUpdateView(generics.UpdateAPIView):
 
 class AllergiesUpdateView(generics.UpdateAPIView):
     serializer_class = AllergiesUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
-        new_allergies = request.data.get("allergies", [])
+        new_allergies_names = request.data.get("allergies", [])
+        
+        new_allergies = Allergy.objects.filter(name__in=new_allergies_names)
+       
+        
         user = self.get_object()
         user.allergies.set(new_allergies)
         user.save()
@@ -225,7 +233,7 @@ class AllergiesUpdateView(generics.UpdateAPIView):
 
 class NotificationDayUpdateView(generics.UpdateAPIView):
     serializer_class = NotificationDayUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
