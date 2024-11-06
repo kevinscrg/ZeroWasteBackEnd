@@ -172,13 +172,13 @@ class GetCollaboratorsView(APIView):
 
 class PreferredNotificationHourUpdateView(generics.UpdateAPIView):
     serializer_class = PreferredNotificationHourUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
-        new_hour = self.kwargs.get("new_hour")
+        new_hour = self.kwargs.get("new_hour")+":00"
         try:
             hour, minute, second = map(int, new_hour.split(":"))
             time_value = time(hour, minute, second)
@@ -195,7 +195,7 @@ class PreferredNotificationHourUpdateView(generics.UpdateAPIView):
 
 class PreferencesUpdateView(generics.UpdateAPIView):
     serializer_class = PreferencesUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
@@ -204,8 +204,7 @@ class PreferencesUpdateView(generics.UpdateAPIView):
         new_preferences_names = request.data.get("preferences", [])
         
         new_preferences = Preference.objects.filter(name__in=new_preferences_names)
-        if not new_preferences:
-            return Response({"detail": "Invalid preferences names provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
         
         user = self.get_object()
         user.preferences.set(new_preferences)
@@ -215,7 +214,7 @@ class PreferencesUpdateView(generics.UpdateAPIView):
 
 class AllergiesUpdateView(generics.UpdateAPIView):
     serializer_class = AllergiesUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
@@ -224,8 +223,7 @@ class AllergiesUpdateView(generics.UpdateAPIView):
         new_allergies_names = request.data.get("allergies", [])
         
         new_allergies = Allergy.objects.filter(name__in=new_allergies_names)
-        if not new_allergies:
-            return Response({"detail": "Invalid allergies names provided."}, status=status.HTTP_400_BAD_REQUEST)
+       
         
         user = self.get_object()
         user.allergies.set(new_allergies)
@@ -235,7 +233,7 @@ class AllergiesUpdateView(generics.UpdateAPIView):
 
 class NotificationDayUpdateView(generics.UpdateAPIView):
     serializer_class = NotificationDayUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
