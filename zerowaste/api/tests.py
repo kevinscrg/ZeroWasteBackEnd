@@ -186,7 +186,7 @@ class UserUpdateTests(TestCase):
 
     def test_update_preferred_notification_hour(self):
         # Ensure the URL matches the exact pattern defined
-        url = reverse('update-preferred-notification-hour', kwargs={'new_hour': '14:30:00'})
+        url = reverse('update-preferred-notification-hour', kwargs={'new_hour': '14:30'})
         response = self.client.patch(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
