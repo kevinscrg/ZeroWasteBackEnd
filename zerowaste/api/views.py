@@ -17,7 +17,7 @@ from .serializers import ( ChangeUserListSerializer,
     NotificationDayUpdateSerializer
 )
 from rest_framework import generics, permissions
-from .models import User
+from .models import Allergy, Preference, User
 from rest_framework.permissions import IsAuthenticated
 from datetime import time
 
@@ -201,7 +201,12 @@ class PreferencesUpdateView(generics.UpdateAPIView):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
-        new_preferences = request.data.get("preferences", [])
+        new_preferences_names = request.data.get("preferences", [])
+        
+        new_preferences = Preference.objects.filter(name__in=new_preferences_names)
+        if not new_preferences:
+            return Response({"detail": "Invalid preferences names provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
         user = self.get_object()
         user.preferences.set(new_preferences)
         user.save()
@@ -216,7 +221,12 @@ class AllergiesUpdateView(generics.UpdateAPIView):
         return self.request.user
 
     def patch(self, request, *args, **kwargs):
-        new_allergies = request.data.get("allergies", [])
+        new_allergies_names = request.data.get("allergies", [])
+        
+        new_allergies = Allergy.objects.filter(name__in=new_allergies_names)
+        if not new_allergies:
+            return Response({"detail": "Invalid allergies names provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
         user = self.get_object()
         user.allergies.set(new_allergies)
         user.save()

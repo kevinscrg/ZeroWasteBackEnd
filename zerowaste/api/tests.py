@@ -195,7 +195,7 @@ class UserUpdateTests(TestCase):
 
     def test_update_preferences(self):
         # Assuming there are some preferences in the database
-        preference_ids = [1]  # Replace with actual IDs from the setup
+        preference_ids = ["Vegan"]  # Replace with actual IDs from the setup
         url = reverse('update-preferences')
         response = self.client.patch(url, {'preferences': preference_ids}, format='json')
 
@@ -204,7 +204,7 @@ class UserUpdateTests(TestCase):
 
     def test_update_allergies(self):
         # Assuming there are some allergies in the database
-        allergy_ids = [1]  # Replace with actual IDs from the setup
+        allergy_ids = ["Peanut"]  # Replace with actual IDs from the setup
         url = reverse('update-allergies')
         response = self.client.patch(url, {'allergies': allergy_ids}, format='json')
         # Check if response is successful
