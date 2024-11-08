@@ -26,7 +26,6 @@ class DeleteProductSerializer(serializers.ModelSerializer):
         fields = ['id']
         
     def validate(self, data):
-        print(data)
         if not Product.objects.filter(id=data['id']).exists():
             raise serializers.ValidationError('Product with this id does not exist!')
         return data

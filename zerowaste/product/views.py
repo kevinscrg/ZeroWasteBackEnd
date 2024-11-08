@@ -1,4 +1,6 @@
 
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from rest_framework import generics, status  # type: ignore
 from rest_framework.views import APIView # type: ignore
 from rest_framework.response import Response # type: ignore
@@ -59,7 +61,6 @@ class UserProductListView(APIView):
         user_product_lists = request.user.product_list
         serializer = ProductSerializer(data=request.data)  
         if serializer.is_valid():
-            print(serializer.validated_data)
             product_to_update = user_product_lists.products.get(id=serializer.validated_data['id'])
             product_to_update.name = serializer.validated_data['name'] if 'name' in serializer.validated_data else product_to_update.name
             product_to_update.best_before = serializer.validated_data['best_before'] if 'best_before' in serializer.validated_data else product_to_update.best_before
@@ -73,7 +74,7 @@ class UserProductListView(APIView):
         user_product_lists = request.user.product_list
         serializer = DeleteProductSerializer(data=request.data)
         if serializer.is_valid():
-            product_to_delete = user_product_lists.products.get(id=serializer.validated_data['id'])
+            product_to_delete = get_object_or_404(user_product_lists.products, id=serializer.validated_data['id'])
             user_product_lists.products.remove(product_to_delete)
             product_to_delete.delete()
             user_product_lists.save()
@@ -91,32 +92,32 @@ class UploadReceiptImageView(APIView):
         if serializer.is_valid():
             image_file = serializer.validated_data['image']
 
-            directory_path = os.path.join(settings.MEDIA_ROOT, 'food-item-tickets') # dir for the pics
+            # Define directory path
+            directory_path = os.path.join(settings.MEDIA_ROOT, 'food-item-tickets')
 
+            # Create directory if not exists
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
 
-            file_path = os.path.join(directory_path, image_file.name) 
-            
+            # Define file path and save image
+            file_path = os.path.join(directory_path, image_file.name)
             with open(file_path, 'wb') as f:
-                for chunk in image_file.chunks(): 
+                for chunk in image_file.chunks():
                     f.write(chunk)
 
+            # Initialize OCR service and run process_receipt
             ocr_service = ReceiptProcessingAI()
-            products = ocr_service.process_receipt(file_path)  # List of product names
-            
+
+            # Run process_receipt asynchronously but wait for the result
+            products = asyncio.run(ocr_service.process_receipt(file_path))
+
+            # Get user and their product list
             user = request.user
-            
             user_product_list = user.product_list
-        
             product_objects = []
 
+            # Loop through products and add them to user product list
             for product_name in products:
-                # Check if the product already exists
-                product, created = Product.objects.get_or_create(name=product_name)
-
-            for product_name in products:
-                # Check if the product already exists; if not, create a new one with blank fields
                 product, created = Product.objects.get_or_create(
                     name=product_name,
                     defaults={
@@ -126,9 +127,13 @@ class UploadReceiptImageView(APIView):
                     }
                 )
                 user_product_list.products.add(product)
-                product_objects.append(product)    
-            user_product_list.save()
+                product_objects.append(product)
 
+            # Save user's product list and clean up uploaded file
+            user_product_list.save()
+            os.remove(file_path)
+
+            # Return serialized product data
             return Response({
                 "products": ProductSerializer(product_objects, many=True).data
             }, status=status.HTTP_200_OK)
