@@ -107,10 +107,7 @@ class UploadReceiptImageView(APIView):
             
             user = request.user
             
-            user_product_list, created = UserProductList.objects.get_or_create(
-                user=user,
-                defaults={'share_code': UserProductList()._generate_unique_code()}
-            )
+            user_product_list = user.product_list
         
             product_objects = []
 
@@ -128,9 +125,8 @@ class UploadReceiptImageView(APIView):
                         'opened': None
                     }
                 )
-                product_objects.append(product)
-
-            user_product_list.products.set(product_objects)
+                user_product_list.products.add(product)
+                product_objects.append(product)    
             user_product_list.save()
 
             return Response({
