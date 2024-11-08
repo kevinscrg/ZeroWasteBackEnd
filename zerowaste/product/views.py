@@ -3,9 +3,14 @@ from rest_framework import generics, status  # type: ignore
 from rest_framework.views import APIView # type: ignore
 from rest_framework.response import Response # type: ignore
 from rest_framework.permissions import IsAuthenticated # type: ignore
-
-from .models import Product
-from .serializers import DeleteProductSerializer, CreateProductSerializer, UserProductListSerializer, ProductSerializer
+from django.core.files.storage import default_storage
+from django.conf import settings
+from django.shortcuts import get_object_or_404
+from .services.receipt_processing import ReceiptProcessingAI
+from .models import Product,UserProductList
+from .serializers import DeleteProductSerializer, CreateProductSerializer, UserProductListSerializer, ProductSerializer, ReceiptImageUploadSerializer
+from django.utils import timezone
+import os
 
 #Handles GET and POST
 class ProductListCreateView(generics.ListCreateAPIView):
@@ -73,4 +78,63 @@ class UserProductListView(APIView):
             product_to_delete.delete()
             user_product_lists.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class UploadReceiptImageView(APIView):
+    def post(self, request):
+        """
+        Handle receipt image upload, process with OCR, and return product list.
+        Optionally, save these products to the user's product list.
+        """
+        serializer = ReceiptImageUploadSerializer(data=request.data)
+        if serializer.is_valid():
+            image_file = serializer.validated_data['image']
+
+            directory_path = os.path.join(settings.MEDIA_ROOT, 'food-item-tickets') # dir for the pics
+
+            if not os.path.exists(directory_path):
+                os.makedirs(directory_path)
+
+            file_path = os.path.join(directory_path, image_file.name) 
+            
+            with open(file_path, 'wb') as f:
+                for chunk in image_file.chunks(): 
+                    f.write(chunk)
+
+            ocr_service = ReceiptProcessingAI()
+            products = ocr_service.process_receipt(file_path)  # List of product names
+            
+            user = request.user
+            
+            user_product_list, created = UserProductList.objects.get_or_create(
+                user=user,
+                defaults={'share_code': UserProductList()._generate_unique_code()}
+            )
+        
+            product_objects = []
+
+            for product_name in products:
+                # Check if the product already exists
+                product, created = Product.objects.get_or_create(name=product_name)
+
+            for product_name in products:
+                # Check if the product already exists; if not, create a new one with blank fields
+                product, created = Product.objects.get_or_create(
+                    name=product_name,
+                    defaults={
+                        'best_before': None,
+                        'consumption_days': None,
+                        'opened': None
+                    }
+                )
+                product_objects.append(product)
+
+            user_product_list.products.set(product_objects)
+            user_product_list.save()
+
+            return Response({
+                "products": ProductSerializer(product_objects, many=True).data
+            }, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

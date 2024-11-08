@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-)dn0eeifdmtbr&*qxkvttqor9f$uk$w1l!)5j#7a_c45tad*17
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.100.92","192.168.100.79",'127.0.0.1', 'localhost'] 
+ALLOWED_HOSTS = ["192.168.100.92","192.168.100.79",'127.0.0.1'] 
 
 
 # Application definition
@@ -75,7 +75,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "zerowaste.urls"
-CORS_ALLOWED_ORIGINS = ["http://192.168.100.79:8100", 'http://localhost:8100'] 
+CORS_ALLOWED_ORIGINS = ["http://192.168.100.79:8100"] 
 
 TEMPLATES = [
     {
@@ -106,6 +106,16 @@ DATABASES = {
     }
 }
 
+# DATABASES={
+#     "default":{
+#       "ENGINE": "django.db.backends.postgresql_psycopg2",
+#       "NAME": "zerowaste",
+#       "USER": "postgres",
+#       "PASSWORD": "postgres",
+#       "HOST": "localhost",
+#       "PORT": "5432",
+#   }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

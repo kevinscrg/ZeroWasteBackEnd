@@ -52,4 +52,7 @@ class UserProductListSerializer(serializers.ModelSerializer):
             user_product_list.products.add(product)  # Adds the product to the user's product list
 
         return user_product_list
-    
+
+
+class ReceiptImageUploadSerializer(serializers.Serializer):
+    image = serializers.ImageField()
