@@ -75,7 +75,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "zerowaste.urls"
-CORS_ALLOWED_ORIGINS = ["http://192.168.100.79:8100", 'http://localhost:8100'] 
+CORS_ALLOWED_ORIGINS = ["http://192.168.100.79:8100", 'http://localhost:8100', 'http://192.168.100.92:8100'] 
 
 TEMPLATES = [
     {
