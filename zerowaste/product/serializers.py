@@ -26,7 +26,6 @@ class DeleteProductSerializer(serializers.ModelSerializer):
         fields = ['id']
         
     def validate(self, data):
-        print(data)
         if not Product.objects.filter(id=data['id']).exists():
             raise serializers.ValidationError('Product with this id does not exist!')
         return data
@@ -52,4 +51,7 @@ class UserProductListSerializer(serializers.ModelSerializer):
             user_product_list.products.add(product)  # Adds the product to the user's product list
 
         return user_product_list
-    
+
+
+class ReceiptImageUploadSerializer(serializers.Serializer):
+    image = serializers.ImageField()

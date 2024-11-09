@@ -75,7 +75,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "zerowaste.urls"
-CORS_ALLOWED_ORIGINS = ["http://192.168.100.79:8100", 'http://localhost:8100'] 
+CORS_ALLOWED_ORIGINS = ["http://192.168.100.79:8100", 'http://localhost:8100', 'http://192.168.100.92:8100'] 
 
 TEMPLATES = [
     {
@@ -106,6 +106,16 @@ DATABASES = {
     }
 }
 
+# DATABASES={
+#     "default":{
+#       "ENGINE": "django.db.backends.postgresql_psycopg2",
+#       "NAME": "zerowaste",
+#       "USER": "postgres",
+#       "PASSWORD": "postgres",
+#       "HOST": "localhost",
+#       "PORT": "5432",
+#   }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -147,3 +157,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'

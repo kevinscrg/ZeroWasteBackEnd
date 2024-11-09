@@ -1,7 +1,10 @@
 from django.db import models # type: ignore
+import random
+import string
+
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    best_before = models.DateField()
+    best_before = models.DateField(null=True, blank=True)
     consumption_days = models.PositiveIntegerField(null=True, blank=True)
     opened = models.DateField(null=True, blank=True)
 
