@@ -1,18 +1,15 @@
-
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
+import os
 from rest_framework import generics, status  # type: ignore
 from rest_framework.views import APIView # type: ignore
 from rest_framework.response import Response # type: ignore
 from rest_framework.permissions import IsAuthenticated # type: ignore
-from django.core.files.storage import default_storage
-from django.conf import settings
 from django.shortcuts import get_object_or_404
-from .services.receipt_processing import ReceiptProcessingAI
-from .models import Product,UserProductList
+
+from zerowaste import settings
+from .services.tasks import process_and_save_products_task
+from .models import Product
 from .serializers import DeleteProductSerializer, CreateProductSerializer, UserProductListSerializer, ProductSerializer, ReceiptImageUploadSerializer
-from django.utils import timezone
-import os
+
 
 #Handles GET and POST
 class ProductListCreateView(generics.ListCreateAPIView):
@@ -83,59 +80,27 @@ class UserProductListView(APIView):
     
 
 class UploadReceiptImageView(APIView):
+    
     def post(self, request):
-        """
-        Handle receipt image upload, process with OCR, and return product list.
-        Optionally, save these products to the user's product list.
-        """
         serializer = ReceiptImageUploadSerializer(data=request.data)
         if serializer.is_valid():
             image_file = serializer.validated_data['image']
-
+            
             # Define directory path
-            directory_path = os.path.join(settings.MEDIA_ROOT, 'food-item-tickets')
+            directory_path = os.path.join(settings.BASE_DIR, 'food-item-tickets')
 
             # Create directory if not exists
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
-
-            # Define file path and save image
-            file_path = os.path.join(directory_path, image_file.name)
-            with open(file_path, 'wb') as f:
+            # Salvează imaginea pe disc pentru a o transmite lui Celery
+            image_file_path = os.path.join(directory_path, image_file.name)
+            with open(image_file_path, 'wb+') as destination:
                 for chunk in image_file.chunks():
-                    f.write(chunk)
+                    destination.write(chunk)
 
-            # Initialize OCR service and run process_receipt
-            ocr_service = ReceiptProcessingAI()
+            # Lansează task-ul Celery
+            process_and_save_products_task.apply_async((image_file_path, request.user.id))
 
-            # Run process_receipt asynchronously but wait for the result
-            products = asyncio.run(ocr_service.process_receipt(file_path))
-
-            # Get user and their product list
-            user = request.user
-            user_product_list = user.product_list
-            product_objects = []
-
-            # Loop through products and add them to user product list
-            for product_name in products:
-                product, created = Product.objects.get_or_create(
-                    name=product_name,
-                    defaults={
-                        'best_before': None,
-                        'consumption_days': None,
-                        'opened': None
-                    }
-                )
-                user_product_list.products.add(product)
-                product_objects.append(product)
-
-            # Save user's product list and clean up uploaded file
-            user_product_list.save()
-            os.remove(file_path)
-
-            # Return serialized product data
-            return Response({
-                "products": ProductSerializer(product_objects, many=True).data
-            }, status=status.HTTP_200_OK)
+            return Response({"message": "Processing started"}, status=status.HTTP_202_ACCEPTED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

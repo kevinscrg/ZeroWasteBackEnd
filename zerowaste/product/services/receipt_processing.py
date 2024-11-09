@@ -3,7 +3,6 @@ import cv2
 import pytesseract
 import spacy
 import configparser
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 # Încarcă modelul Spacy o singură dată global
@@ -21,7 +20,7 @@ class ReceiptProcessingAI:
         main_tokens = [token.text for token in doc if token.pos_ in {"NOUN", "PROPN"}]
         return " ".join(main_tokens) if main_tokens else text
 
-    async def filter_edible_products(self, product_list, threshold=0.3):
+    def filter_edible_products(self, product_list, threshold=0.3):
         edible_products = []
 
         # Referințe pentru produse alimentare și non-alimentare
@@ -55,17 +54,12 @@ class ReceiptProcessingAI:
 
         return edible_products
 
-    async def process_receipt(self, image_path):
-        # Citirea imaginii și preprocesarea cu cv2 în executor
-        loop = asyncio.get_event_loop()
-        image = await loop.run_in_executor(self.executor, cv2.imread, image_path)
-        gray = await loop.run_in_executor(self.executor, cv2.cvtColor, image, cv2.COLOR_BGR2GRAY)
+    def process_receipt(self, image):
+        # Preprocesarea imaginii primite ca parametru
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # Extrage textul folosind pytesseract în executor
-        ocr_text = await loop.run_in_executor(
-                                                self.executor,
-                                                lambda: pytesseract.image_to_string(gray, config="--psm 6")
-                                            )
+        # Extrage textul folosind pytesseract
+        ocr_text = pytesseract.image_to_string(gray, config="--psm 6")
         
         # Extrage produsele din textul OCR
         item_pattern = r'\b([a-zA-Z]+(?: [a-zA-Z]+)*(?:/[a-zA-Z]+)*(?: [a-zA-Z]+)*)\b'
@@ -80,5 +74,5 @@ class ReceiptProcessingAI:
                 seen_items.add(item)
 
         # Filtrează produsele comestibile
-        rez = await self.filter_edible_products(unique_food_items)
+        rez = self.filter_edible_products(unique_food_items)
         return rez
