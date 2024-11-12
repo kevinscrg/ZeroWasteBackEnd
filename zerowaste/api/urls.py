@@ -17,4 +17,5 @@ urlpatterns = [
     path('user/update/allergies/', AllergiesUpdateView.as_view(), name='update-allergies'),
     path('user/update/notification_day/<int:new_day>/', NotificationDayUpdateView.as_view(),
          name='update-notification-day'),
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
 ]
