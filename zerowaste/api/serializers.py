@@ -1,6 +1,6 @@
 import random
 import string
-from django.contrib.auth import authenticate # type: ignore
+from django.contrib.auth import authenticate, get_user_model # type: ignore
 from rest_framework.exceptions import AuthenticationFailed # type: ignore
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError # type: ignore
 from rest_framework import serializers # type: ignore
@@ -155,3 +155,30 @@ class NotificationDayUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['notification_day']
+        
+        
+User = get_user_model()       
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise ValidationError("Old password is incorrect.")
+        return value
+
+    def validate(self, data):
+        new_password = data.get('new_password')
+        confirm_password = data.get('confirm_password')
+        if new_password != confirm_password:
+            raise ValidationError("New passwords do not match.")
+        return data
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user       
+        

@@ -14,7 +14,8 @@ from .serializers import ( ChangeUserListSerializer,
     PreferredNotificationHourUpdateSerializer, 
     PreferencesUpdateSerializer, 
     AllergiesUpdateSerializer, 
-    NotificationDayUpdateSerializer
+    NotificationDayUpdateSerializer,
+    ChangePasswordSerializer  
 )
 from rest_framework import generics, permissions
 from .models import Allergy, Preference, User
@@ -254,3 +255,15 @@ class NotificationDayUpdateView(generics.UpdateAPIView):
 
         return Response({"notification_day": user.notification_day},
                         status=status.HTTP_200_OK)
+        
+        
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
