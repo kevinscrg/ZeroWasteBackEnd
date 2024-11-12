@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     "corsheaders",
+    'channels',
 ]
 
 REST_FRAMEWORK = {
@@ -52,7 +53,13 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = 'api.User'  
+ASGI_APPLICATION = 'zerowaste.asgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 
 # JWT settings (optional, you can adjust token lifetime)
 from datetime import timedelta
