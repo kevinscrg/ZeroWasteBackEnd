@@ -166,14 +166,14 @@ class ChangePasswordSerializer(serializers.Serializer):
     def validate_old_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
-            raise ValidationError("Old password is incorrect.")
+            raise serializers.ValidationError("Old password is incorrect.")
         return value
 
     def validate(self, data):
         new_password = data.get('new_password')
         confirm_password = data.get('confirm_password')
         if new_password != confirm_password:
-            raise ValidationError("New passwords do not match.")
+            raise serializers.ValidationError("New passwords do not match.")
         return data
 
     def save(self, **kwargs):
