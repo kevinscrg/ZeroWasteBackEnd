@@ -1,9 +1,8 @@
-django==4.2.5
-djangorestframework==3.14.0
-environs==9.5.0
-celery==5.2.7
-redis==4.5.5
-Pillow==10.0.0
-numpy==1.23.5
-pytesseract==0.3.10
-spacy==3.5.1
+django
+djangorestframework
+environs
+celery
+redis
+channels
+daphne
+channels-redis
