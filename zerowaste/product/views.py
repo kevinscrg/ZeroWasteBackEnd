@@ -10,6 +10,9 @@ from .services.tasks import process_and_save_products_task
 from .models import Product
 from .serializers import DeleteProductSerializer, CreateProductSerializer, UserProductListSerializer, ProductSerializer, ReceiptImageUploadSerializer
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 #Handles GET and POST
 class ProductListCreateView(generics.ListCreateAPIView):
@@ -51,6 +54,18 @@ class UserProductListView(APIView):
             user_product_lists = request.user.product_list
             user_product_lists.products.add(serializer.save())
             user_product_lists.save()
+            
+            message = {
+                    'type': 'chat_message',  
+                    'message': 'a product has been added' 
+            }
+            
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'notifications{user_product_lists.share_code}',
+                 message
+                )
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -64,6 +79,18 @@ class UserProductListView(APIView):
             product_to_update.consumption_days = serializer.validated_data['consumption_days'] if 'consumption_days' in serializer.validated_data else product_to_update.consumption_days
             product_to_update.opened = serializer.validated_data['opened'] if 'opened' in serializer.validated_data else product_to_update.opened
             product_to_update.save()
+            
+            message = {
+                    'type': 'chat_message',  
+                    'message': 'a product has been updated' 
+            }
+            
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'notifications{user_product_lists.share_code}',
+                 message
+                )
+            
             return Response(ProductSerializer(product_to_update).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -75,6 +102,18 @@ class UserProductListView(APIView):
             user_product_lists.products.remove(product_to_delete)
             product_to_delete.delete()
             user_product_lists.save()
+            
+            message = {
+                    'type': 'chat_message',  
+                    'message': 'a product has been removed' 
+            }
+            
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'notifications{user_product_lists.share_code}',
+                 message
+                )
+            
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

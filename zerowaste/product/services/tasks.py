@@ -7,6 +7,9 @@ from PIL import Image
 import numpy as np
 from ..models import Product
 import os
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 User = get_user_model()
 
@@ -31,12 +34,24 @@ def process_and_save_products_task(image_file_path, user_id):
             user_product_list.products.add(product)
 
         user_product_list.save()
+        
+        message = {
+            "type": "chat_message",
+            "message": f"Receipt processed successfully. {len(products)} products added to your list."
+        }
+        
+        channel_layer = get_channel_layer()
+        
+        async_to_sync(channel_layer.group_send)(
+            f'notifications{user_product_list.share_code}',  
+             message
+            )
+
+        if os.path.exists(image_file_path):
+            os.remove(image_file_path)
 
     except Exception as e:
         print(f"Error processing receipt image: {e}")
 
-    finally:
-        # Șterge fișierul imagine după procesare
-        if os.path.exists(image_file_path):
-            os.remove(image_file_path)
+
 
