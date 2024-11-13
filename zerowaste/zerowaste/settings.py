@@ -55,9 +55,18 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'api.User'  
 ASGI_APPLICATION = 'zerowaste.asgi.application'
 
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer",
+#     },
+# }
+
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],  # Redis trebuie să ruleze pe acest port
+        },
     },
 }
 
