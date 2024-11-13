@@ -21,7 +21,7 @@ python manage.py runserver<br></b>
 for uploading receipts you will need to
 <b>
 Run `redis-server.exe` if you've installed it on Windows, or use `sudo service redis-server start` if you're on a Linux OS. <br>
-run in another terminal the comand: "celery -A zerowaste.celery_app worker -l info --pool=solo"<br>
+run in another terminal the comand: `celery -A zerowaste.celery_app worker -l info --pool=solo`<br>
 </b>
 
 Then open a web browser and go to http://127.0.0.1:8000/user/
