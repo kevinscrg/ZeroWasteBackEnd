@@ -23,8 +23,12 @@ class Allergy(models.Model):
 
 
 class Recipe(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField()
+    name = models.CharField(max_length=255, null=True, blank=True)
+    link = models.URLField(null=True, blank=True)
+    image = models.URLField(null=True, blank=True)
+    difficulty = models.IntegerField(null=True, blank=True)
+    time = models.IntegerField(null=True, blank=True)
+    recepie_type = models.CharField(max_length=255, null=True, blank=True)    
 
     def __str__(self):
         return self.name
