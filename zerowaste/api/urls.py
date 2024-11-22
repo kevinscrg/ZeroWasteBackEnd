@@ -20,4 +20,5 @@ urlpatterns = [
          name='update-notification-day'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('verify-email/<str:token>/', VerifyUserView.as_view, name="verify-email"),
 ]

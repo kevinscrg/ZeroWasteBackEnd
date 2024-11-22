@@ -1,29 +1,16 @@
-import random
-import string
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from .serializers import ( ChangeUserListSerializer, 
-    CollaboratorSerializer, 
-    LoginSerializer,LogoutSerializer, 
-    UserRegistrationSerializer, 
-    UserSerializer, 
-    VerifyUserSerializer,
-    PreferredNotificationHourUpdateSerializer, 
-    PreferencesUpdateSerializer, 
-    AllergiesUpdateSerializer, 
-    NotificationDayUpdateSerializer,
-    ChangePasswordSerializer  
-)
+from .serializers import *
+from .models import *
 from rest_framework import generics, permissions
-from .models import Allergy, Preference, User
 from rest_framework.permissions import IsAuthenticated
 from datetime import time
-
 from product.models import UserProductList
-
+from django.contrib.auth.tokens import default_token_generator  
+from django.contrib.sites.shortcuts import get_current_site 
+from django.urls import reverse 
+from django.core.mail import send_mail
 
 class LoginView(generics.CreateAPIView):
     """
@@ -39,7 +26,6 @@ class LoginView(generics.CreateAPIView):
             return Response(serializer.data["tokens"], status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
     
 class LogoutView(generics.GenericAPIView):
     """
@@ -47,8 +33,6 @@ class LogoutView(generics.GenericAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = LogoutSerializer
-
-    
 
     def post(self, request):
         
@@ -58,27 +42,28 @@ class LogoutView(generics.GenericAPIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
   
-    
 class RegisterView(generics.CreateAPIView):
     """
     API View to register a new user.
     """
     serializer_class = UserRegistrationSerializer
       
-    def create(self, request, *args, **kwargs):
-        
-        
+    def create(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        User.objects.create(
-            email = serializer.validated_data["email"],
-            password = serializer.validated_data["password"])
-        
-        
 
-        
-        response_serializer = UserSerializer(User.objects.get(email=serializer.validated_data["email"]))
+        # Create the user
+        user = User.objects.create(
+            email=serializer.validated_data["email"]
+        )
+        user.set_password(serializer.validated_data["password"])  # Ensure password is hashed
+        user.save()
+
+        # Send verification email
+        send_verification_email(request, user)
+
+        # Serialize the response
+        response_serializer = UserSerializer(user)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -90,7 +75,6 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer  
     permission_classes = [permissions.AllowAny]  
     
-
 class UserDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -101,8 +85,6 @@ class UserDetailView(generics.RetrieveAPIView):
         serializer = UserSerializer(self.get_object())
         return Response(serializer.data)
     
-    
-
 class DeleteAccountView(APIView):
     """
     API view to allow authenticated users to delete their own account.
@@ -117,24 +99,41 @@ class DeleteAccountView(APIView):
             return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         return Response({"detail": "wrong password"}, status=status.HTTP_401_UNAUTHORIZED)
     
+def send_verification_email(request, user):
+    # Construct a generic verification URL
+    verification_url = f"{request.scheme}://{get_current_site(request)}{reverse('verify-email')}"
+    # Send email
+    send_mail(
+        subject='Verify your email',
+        message=f"Hi, please click the link to verify your email: {verification_url}",
+        from_email='dariusgrigorestoica@gmail.com',
+        recipient_list=[user.email],
+    )
+    
 class VerifyUserView(APIView):
     """
     API view to allow users to verify their email address.
     """
     permission_classes = [IsAuthenticated]
     
-
-    def post(self, request, *args, **kwargs):
-        serializer = VerifyUserSerializer(data=request.data)
+    def post(self, request):
+        # User is already authenticated through IsAuthenticated
         user = request.user
+
+        # Verify the user's email
         user.is_verified = True
+
+        # Create product list
+        serializer = VerifyUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         sh_code = serializer.generate_unique_share_code()
-        product_list = UserProductList.objects.create(share_code = sh_code)
+        product_list = UserProductList.objects.create(share_code=sh_code)
         user.product_list = product_list
-        
+
         user.save()
         return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
-    
+
     
 class ChangeUserListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -256,7 +255,6 @@ class NotificationDayUpdateView(generics.UpdateAPIView):
         return Response({"notification_day": user.notification_day},
                         status=status.HTTP_200_OK)
         
-        
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -266,4 +264,3 @@ class ChangePasswordView(APIView):
             serializer.save()
             return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        

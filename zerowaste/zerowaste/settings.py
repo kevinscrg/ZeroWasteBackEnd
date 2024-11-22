@@ -71,6 +71,16 @@ CHANNEL_LAYERS = {
 #     },
 # }
 
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Replace with your email provider's SMTP host
+EMAIL_PORT = 587  # Use 465 for SSL, or 587 for TLS
+EMAIL_USE_TLS = True  # Use TLS if using port 587
+EMAIL_USE_SSL = False  # Use SSL if using port 465
+EMAIL_HOST_USER = 'dariusgrigorestoica@gmail.com'  # Replace with your email address
+EMAIL_HOST_PASSWORD = 'umdd yzcy gdfw kszw'  # Replace with your email password
+
 # JWT settings (optional, you can adjust token lifetime)
 from datetime import timedelta
 
@@ -78,7 +88,6 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
-
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
