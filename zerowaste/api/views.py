@@ -42,6 +42,17 @@ class LogoutView(generics.GenericAPIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
   
+def send_verification_email(request, user):
+        # Construct a generic verification URL
+        verification_url = f"{request.scheme}://{get_current_site(request)}{reverse('verify-email')}"
+        # Send email
+        send_mail(
+            subject='Verify your email',
+            message=f"Hi, please click the link to verify your email: {verification_url}",
+            from_email='dariusgrigorestoica@gmail.com',
+            recipient_list=[user.email],
+    )
+
 class RegisterView(generics.CreateAPIView):
     """
     API View to register a new user.
@@ -59,13 +70,13 @@ class RegisterView(generics.CreateAPIView):
         user.set_password(serializer.validated_data["password"])  # Ensure password is hashed
         user.save()
 
+
         # Send verification email
         send_verification_email(request, user)
 
         # Serialize the response
         response_serializer = UserSerializer(user)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-
 
 class UserListView(generics.ListAPIView):
     """
@@ -98,17 +109,6 @@ class DeleteAccountView(APIView):
             user_to_delete.delete()
             return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         return Response({"detail": "wrong password"}, status=status.HTTP_401_UNAUTHORIZED)
-    
-def send_verification_email(request, user):
-    # Construct a generic verification URL
-    verification_url = f"{request.scheme}://{get_current_site(request)}{reverse('verify-email')}"
-    # Send email
-    send_mail(
-        subject='Verify your email',
-        message=f"Hi, please click the link to verify your email: {verification_url}",
-        from_email='dariusgrigorestoica@gmail.com',
-        recipient_list=[user.email],
-    )
     
 class VerifyUserView(APIView):
     """
