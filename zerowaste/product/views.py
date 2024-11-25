@@ -138,7 +138,7 @@ class UploadReceiptImageView(APIView):
                     destination.write(chunk)
 
             # Lansează task-ul Celery
-            process_and_save_products_task.apply_async((image_file_path, request.user.id))
+            process_and_save_products_task.delay(image_file_path, request.user.id)
 
             return Response({"message": "Processing started"}, status=status.HTTP_202_ACCEPTED)
 
