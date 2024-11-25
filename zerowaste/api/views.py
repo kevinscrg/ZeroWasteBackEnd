@@ -110,7 +110,12 @@ class DeleteAccountView(APIView):
         user_to_delete = request.user
         
         if(user_to_delete.check_password(request.data["password"])):
+            old_product_list = user_to_delete.product_list
             user_to_delete.delete()
+            if User.objects.filter(product_list=old_product_list).count() == 0:
+                for product in old_product_list.products.all():
+                    product.delete()
+                old_product_list.delete()
             return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         return Response({"detail": "wrong password"}, status=status.HTTP_401_UNAUTHORIZED)
     
