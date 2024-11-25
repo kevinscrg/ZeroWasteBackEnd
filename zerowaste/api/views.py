@@ -11,6 +11,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site 
 from django.urls import reverse 
 from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.exceptions import AuthenticationFailed
 
 class LoginView(generics.CreateAPIView):
     """
@@ -44,12 +46,14 @@ class LogoutView(generics.GenericAPIView):
   
 def send_verification_email(request, user):
         # Construct a generic verification URL
-        verification_url = f"{request.scheme}://{get_current_site(request)}{reverse('verify-email')}"
+        tokens = user.tokens()
+        access_token = tokens["access"]
+        verification_url = f"{request.scheme}://{get_current_site(request)}/verify-email/?token={access_token}&action=verify_email"
         # Send email
         send_mail(
             subject='Verify your email',
-            message=f"Hi, please click the link to verify your email: {verification_url}",
-            from_email='dariusgrigorestoica@gmail.com',
+            message=f"Hi, please click the link to verify your email: {verification_url} \n this email was generated automatically, please do not reply",
+            from_email='zerowastenoreply@gmail.com',
             recipient_list=[user.email],
     )
 
@@ -114,25 +118,46 @@ class VerifyUserView(APIView):
     """
     API view to allow users to verify their email address.
     """
-    permission_classes = [IsAuthenticated]
     
-    def post(self, request):
-        # User is already authenticated through IsAuthenticated
-        user = request.user
+    def get(self, request):
+        # Preia token-ul din query string
+        token = request.query_params.get('token')
+        action = request.query_params.get('action')
+        if not token or not action:
+            return Response({"error": "Token missing"}, status=400)
+        
+        try:
+            # Decodează token-ul JWT pentru a obține informații despre utilizator
+            access_token = AccessToken(token)
+            if action != 'verify_email':
+                return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verify the user's email
-        user.is_verified = True
+            # Preia utilizatorul din baza de date folosind user_id din token
+            user_id = access_token.get('user_id')
+            user = User.objects.get(id=user_id)
 
-        # Create product list
-        serializer = VerifyUserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+            if user.is_verified:
+                return Response({"detail": "Email already verified."}, status=status.HTTP_200_OK)
 
-        sh_code = serializer.generate_unique_share_code()
-        product_list = UserProductList.objects.create(share_code=sh_code)
-        user.product_list = product_list
+            # Verifică email-ul utilizatorului
+            user.is_verified = True
 
-        user.save()
-        return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
+            # Creează lista de produse
+            serializer = VerifyUserSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            sh_code = serializer.generate_unique_share_code()
+            product_list = UserProductList.objects.create(share_code=sh_code)
+            user.product_list = product_list
+
+            # Salvează utilizatorul
+            user.save()
+
+            return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     
 class ChangeUserListView(APIView):

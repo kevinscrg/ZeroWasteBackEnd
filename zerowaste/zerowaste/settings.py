@@ -79,8 +79,8 @@ EMAIL_HOST = 'smtp.gmail.com'  # Replace with your email provider's SMTP host
 EMAIL_PORT = 587  # Use 465 for SSL, or 587 for TLS
 EMAIL_USE_TLS = True  # Use TLS if using port 587
 EMAIL_USE_SSL = False  # Use SSL if using port 465
-EMAIL_HOST_USER = 'dariusgrigorestoica@gmail.com'  # Replace with your email address
-EMAIL_HOST_PASSWORD = 'umdd yzcy gdfw kszw'  # Replace with your email password
+EMAIL_HOST_USER = 'zerowastenoreply@gmail.com'  # Replace with your email address
+EMAIL_HOST_PASSWORD = 'xvbk bkgf hhqf ufia'  # Replace with your email password
 
 # JWT settings (optional, you can adjust token lifetime)
 from datetime import timedelta
