@@ -216,3 +216,72 @@ class UserUpdateTests(TestCase):
 
         # Check if response is successful
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+from rest_framework.test import APITestCase
+from rest_framework import status
+from django.contrib.auth.models import User
+from django.urls import reverse
+from rest_framework.authtoken.models import Token
+
+class VerifyEmailViewTests(APITestCase):
+    
+    def setUp(self):
+        # Create a test user
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="password123"
+        )
+        # Generate a token for the user (assume this token is used in verification)
+        self.token = Token.objects.create(user=self.user)
+        self.verify_url = reverse("verify-email")  # Replace with the actual name of your URL
+    
+    def test_verify_email_successful(self):
+        """
+        Ensure the email verification succeeds with a valid token.
+        """
+        response = self.client.post(self.verify_url, {"token": self.token.key})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("message", response.data)
+        self.assertEqual(response.data["message"], "Email verified successfully")
+        # Additional checks (if the verification sets a flag on the user model)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+    
+    def test_verify_email_invalid_token(self):
+        """
+        Ensure the email verification fails with an invalid token.
+        """
+        response = self.client.post(self.verify_url, {"token": "invalidtoken"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "Invalid token")
+    
+    def test_verify_email_missing_token(self):
+        """
+        Ensure the email verification fails when the token is not provided.
+        """
+        response = self.client.post(self.verify_url, {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "Token is required")
+    
+    def test_verify_email_already_verified(self):
+        """
+        Ensure the email verification fails if the email is already verified.
+        """
+        # Simulate an already verified email
+        self.user.is_active = True
+        self.user.save()
+
+        response = self.client.post(self.verify_url, {"token": self.token.key})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "Email is already verified")
+
+    def test_verify_email_invalid_request_method(self):
+        """
+        Ensure the email verification fails for unsupported HTTP methods.
+        """
+        response = self.client.get(self.verify_url, {"token": self.token.key})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

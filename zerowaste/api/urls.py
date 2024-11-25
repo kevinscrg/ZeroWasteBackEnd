@@ -9,7 +9,6 @@ urlpatterns = [
     path('user/', UserDetailView.as_view(), name='user-detail'),
     path('logout/', LogoutView.as_view(), name="logout"),
     path('delete-account/', DeleteAccountView.as_view(), name='delete-account'),
-    path('verify-email/', VerifyUserView.as_view(), name='verify-email'),
     path('change-list/', ChangeUserListView.as_view(), name='change-list'),
     path('collaborators/', GetCollaboratorsView.as_view(), name='list-collaborators'),
     path('user/update/preferred_notification_hour/<str:new_hour>/', PreferredNotificationHourUpdateView.as_view(),
@@ -20,4 +19,5 @@ urlpatterns = [
          name='update-notification-day'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('verify-email/', VerifyUserView.as_view(), name="verify-email"),
 ]

@@ -1,29 +1,18 @@
-import random
-import string
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from .serializers import ( ChangeUserListSerializer, 
-    CollaboratorSerializer, 
-    LoginSerializer,LogoutSerializer, 
-    UserRegistrationSerializer, 
-    UserSerializer, 
-    VerifyUserSerializer,
-    PreferredNotificationHourUpdateSerializer, 
-    PreferencesUpdateSerializer, 
-    AllergiesUpdateSerializer, 
-    NotificationDayUpdateSerializer,
-    ChangePasswordSerializer  
-)
+from .serializers import *
+from .models import *
 from rest_framework import generics, permissions
-from .models import Allergy, Preference, User
 from rest_framework.permissions import IsAuthenticated
 from datetime import time
-
 from product.models import UserProductList
-
+from django.contrib.auth.tokens import default_token_generator  
+from django.contrib.sites.shortcuts import get_current_site 
+from django.urls import reverse 
+from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.exceptions import AuthenticationFailed
 
 class LoginView(generics.CreateAPIView):
     """
@@ -39,7 +28,6 @@ class LoginView(generics.CreateAPIView):
             return Response(serializer.data["tokens"], status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
     
 class LogoutView(generics.GenericAPIView):
     """
@@ -47,8 +35,6 @@ class LogoutView(generics.GenericAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = LogoutSerializer
-
-    
 
     def post(self, request):
         
@@ -58,29 +44,43 @@ class LogoutView(generics.GenericAPIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
   
-    
+def send_verification_email(request, user):
+        # Construct a generic verification URL
+        tokens = user.tokens()
+        access_token = tokens["access"]
+        verification_url = f"{request.scheme}://{get_current_site(request)}/verify-email/?token={access_token}&action=verify_email"
+        # Send email
+        send_mail(
+            subject='Verify your email',
+            message=f"Hi, please click the link to verify your email: {verification_url} \n this email was generated automatically, please do not reply",
+            from_email='zerowastenoreply@gmail.com',
+            recipient_list=[user.email],
+    )
+
 class RegisterView(generics.CreateAPIView):
     """
     API View to register a new user.
     """
     serializer_class = UserRegistrationSerializer
       
-    def create(self, request, *args, **kwargs):
-        
-        
+    def create(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        User.objects.create(
-            email = serializer.validated_data["email"],
-            password = serializer.validated_data["password"])
-        
-        
 
-        
-        response_serializer = UserSerializer(User.objects.get(email=serializer.validated_data["email"]))
+        # Create the user
+        user = User.objects.create(
+            email=serializer.validated_data["email"]
+        )
+        user.set_password(serializer.validated_data["password"])  # Ensure password is hashed
+        user.save()
+
+
+        # Send verification email
+        send_verification_email(request, user)
+
+        # Serialize the response
+        response_serializer = UserSerializer(user)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-
 
 class UserListView(generics.ListAPIView):
     """
@@ -90,7 +90,6 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer  
     permission_classes = [permissions.AllowAny]  
     
-
 class UserDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -101,8 +100,6 @@ class UserDetailView(generics.RetrieveAPIView):
         serializer = UserSerializer(self.get_object())
         return Response(serializer.data)
     
-    
-
 class DeleteAccountView(APIView):
     """
     API view to allow authenticated users to delete their own account.
@@ -121,20 +118,47 @@ class VerifyUserView(APIView):
     """
     API view to allow users to verify their email address.
     """
-    permission_classes = [IsAuthenticated]
     
-
-    def post(self, request, *args, **kwargs):
-        serializer = VerifyUserSerializer(data=request.data)
-        user = request.user
-        user.is_verified = True
-        sh_code = serializer.generate_unique_share_code()
-        product_list = UserProductList.objects.create(share_code = sh_code)
-        user.product_list = product_list
+    def get(self, request):
+        # Preia token-ul din query string
+        token = request.query_params.get('token')
+        action = request.query_params.get('action')
+        if not token or not action:
+            return Response({"error": "Token missing"}, status=400)
         
-        user.save()
-        return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
-    
+        try:
+            # Decodează token-ul JWT pentru a obține informații despre utilizator
+            access_token = AccessToken(token)
+            if action != 'verify_email':
+                return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Preia utilizatorul din baza de date folosind user_id din token
+            user_id = access_token.get('user_id')
+            user = User.objects.get(id=user_id)
+
+            if user.is_verified:
+                return Response({"detail": "Email already verified."}, status=status.HTTP_200_OK)
+
+            # Verifică email-ul utilizatorului
+            user.is_verified = True
+
+            # Creează lista de produse
+            serializer = VerifyUserSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            sh_code = serializer.generate_unique_share_code()
+            product_list = UserProductList.objects.create(share_code=sh_code)
+            user.product_list = product_list
+
+            # Salvează utilizatorul
+            user.save()
+
+            return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     
 class ChangeUserListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -256,7 +280,6 @@ class NotificationDayUpdateView(generics.UpdateAPIView):
         return Response({"notification_day": user.notification_day},
                         status=status.HTTP_200_OK)
         
-        
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -266,4 +289,3 @@ class ChangePasswordView(APIView):
             serializer.save()
             return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        

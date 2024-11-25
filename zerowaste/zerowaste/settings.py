@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-)dn0eeifdmtbr&*qxkvttqor9f$uk$w1l!)5j#7a_c45tad*17
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.100.92","192.168.100.79",'127.0.0.1', 'localhost'] 
+ALLOWED_HOSTS = ["192.168.100.92","192.168.100.79",'127.0.0.1', 'localhost', '192.168.1.9'] 
 
 
 # Application definition
@@ -72,6 +72,16 @@ CHANNEL_LAYERS = {
 #     },
 # }
 
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Replace with your email provider's SMTP host
+EMAIL_PORT = 587  # Use 465 for SSL, or 587 for TLS
+EMAIL_USE_TLS = True  # Use TLS if using port 587
+EMAIL_USE_SSL = False  # Use SSL if using port 465
+EMAIL_HOST_USER = 'zerowastenoreply@gmail.com'  # Replace with your email address
+EMAIL_HOST_PASSWORD = 'xvbk bkgf hhqf ufia'  # Replace with your email password
+
 # JWT settings (optional, you can adjust token lifetime)
 from datetime import timedelta
 
@@ -79,7 +89,6 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
-
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
