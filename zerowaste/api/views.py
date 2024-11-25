@@ -1,3 +1,4 @@
+from urllib.parse import parse_qsl, urlparse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -46,9 +47,12 @@ class LogoutView(generics.GenericAPIView):
   
 def send_verification_email(request, user):
         # Construct a generic verification URL
-        tokens = user.tokens()
-        access_token = tokens["access"]
-        verification_url = f"{request.scheme}://{get_current_site(request)}/verify-email/?token={access_token}&action=verify_email"
+        token = default_token_generator.make_token(user)
+        refer = request.META.get('HTTP_REFERER')
+        parse_qsl = urlparse(refer)
+        domain = f"{parse_qsl.scheme}://{parse_qsl.netloc}/"
+        
+        verification_url = f"{domain}successfully-created-account/?token={token}&uid={user.pk}"
         # Send email
         send_mail(
             subject='Verify your email',
@@ -124,45 +128,31 @@ class VerifyUserView(APIView):
     API view to allow users to verify their email address.
     """
     
-    def get(self, request):
-        # Preia token-ul din query string
-        token = request.query_params.get('token')
-        action = request.query_params.get('action')
-        if not token or not action:
-            return Response({"error": "Token missing"}, status=400)
+    def post(self, request):
+
+        token = request.data.get('token')
+        uid = request.data.get('uid')
         
-        try:
-            # Decodează token-ul JWT pentru a obține informații despre utilizator
-            access_token = AccessToken(token)
-            if action != 'verify_email':
-                return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.get(pk=uid)
+        if not default_token_generator.check_token(user, token):
+            raise AuthenticationFailed('The verify link is invalid') 
 
-            # Preia utilizatorul din baza de date folosind user_id din token
-            user_id = access_token.get('user_id')
-            user = User.objects.get(id=user_id)
+        if user.is_verified:
+            return Response({"detail": "Email already verified."}, status=status.HTTP_200_OK)
 
-            if user.is_verified:
-                return Response({"detail": "Email already verified."}, status=status.HTTP_200_OK)
+        user.is_verified = True
 
-            # Verifică email-ul utilizatorului
-            user.is_verified = True
+        serializer = VerifyUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-            # Creează lista de produse
-            serializer = VerifyUserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+        sh_code = serializer.generate_unique_share_code()
+        product_list = UserProductList.objects.create(share_code=sh_code)
+        user.product_list = product_list
 
-            sh_code = serializer.generate_unique_share_code()
-            product_list = UserProductList.objects.create(share_code=sh_code)
-            user.product_list = product_list
+        user.save()
 
-            # Salvează utilizatorul
-            user.save()
+        return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
 
-            return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     
 class ChangeUserListView(APIView):
@@ -294,3 +284,43 @@ class ChangePasswordView(APIView):
             serializer.save()
             return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email', '')
+        user = User.objects.filter(email=email).first()
+        if user is None:
+            raise AuthenticationFailed('A user with this email was not found.')
+        
+        token = default_token_generator.make_token(user)
+        refer = request.META.get('HTTP_REFERER')
+        parse_qsl = urlparse(refer)
+        domain = f"{parse_qsl.scheme}://{parse_qsl.netloc}/"
+        url = f"{domain}set-new-password/?token={token}&uid={user.pk}"
+        send_mail(
+            subject='Password Reset',
+            message=f'Hi, please click the link to reset your password: {url}',
+            from_email='zerowastenoreply@gmail.com',
+            recipient_list=[user.email],)
+        
+        return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+
+class ResetPasswordView(APIView):
+    def post(self, request):
+        token = request.data.get('token')
+        uid = request.data.get('uid')
+        password = request.data.get('password')
+        confirm_password = request.data.get('confirm_password')
+        
+        user = User.objects.get(pk=uid)
+        
+        if not default_token_generator.check_token(user, token):
+            raise AuthenticationFailed('The reset link is invalid')
+        
+        if password != confirm_password:
+            raise AuthenticationFailed('The passwords do not match')
+        
+        user.set_password(password)
+        user.save()
+        
+        return Response({'success': 'Password reset successful'}, status=status.HTTP_200_OK)
