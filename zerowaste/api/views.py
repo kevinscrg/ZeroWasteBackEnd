@@ -2,6 +2,7 @@ from urllib.parse import parse_qsl, urlparse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from zerowaste import settings
 from .serializers import *
 from .models import *
 from rest_framework import generics, permissions
@@ -79,8 +80,15 @@ class RegisterView(generics.CreateAPIView):
         user.save()
 
 
-        # Send verification email
-        send_verification_email(request, user)
+        if settings.TESTING:
+            user.is_verified = True
+            sh_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            product_list = UserProductList.objects.create(share_code=sh_code)
+            user.product_list = product_list
+            user.save()
+        else:
+            # Trimite email-ul de verificare doar dacă nu e test
+            send_verification_email(request, user)
 
         # Serialize the response
         response_serializer = UserSerializer(user)
