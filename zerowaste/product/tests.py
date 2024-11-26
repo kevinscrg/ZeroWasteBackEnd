@@ -9,6 +9,10 @@ from rest_framework import status # type: ignore
 from rest_framework.test import APITestCase # type: ignore
 from .models import Product
 from rest_framework_simplejwt.tokens import RefreshToken # type: ignore
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 class ProductModelTest(TestCase):
 

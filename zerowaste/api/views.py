@@ -141,9 +141,13 @@ class VerifyUserView(APIView):
         
         if settings.TESTING:
             user = request.user
+            if user.is_verified:
+             return Response({"detail": "Email already verified."}, status=status.HTTP_200_OK)
+            
             sh_code = serializer.generate_unique_share_code()
             product_list = UserProductList.objects.create(share_code=sh_code)
             user.product_list = product_list
+            user.is_verified = True
 
             user.save()
             return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
