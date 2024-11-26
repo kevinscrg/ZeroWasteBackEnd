@@ -5,6 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed # type: ignore
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError # type: ignore
 from rest_framework import serializers # type: ignore
 from product.models import UserProductList
+from zerowaste import settings
 from .models import User
 
 class LoginSerializer(serializers.Serializer):
@@ -41,11 +42,17 @@ class LoginSerializer(serializers.Serializer):
             raise AuthenticationFailed('The user with this email address does not exist.')
           
         if user.check_password(password):
-            return {
-            'email': user.email,
-            'tokens': user.tokens
-            }
-            
+            if settings.TESTING:
+                return {
+                'email': user.email,
+                'tokens': user.tokens
+                }
+            elif user.is_verified:
+                return {
+                'email': user.email,
+                'tokens': user.tokens
+                }
+            raise AuthenticationFailed('The email is not verified!')
         raise AuthenticationFailed('The password is incorrect!')
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

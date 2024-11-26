@@ -2,6 +2,7 @@ from urllib.parse import parse_qsl, urlparse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from zerowaste import settings
 from .serializers import *
 from .models import *
 from rest_framework import generics, permissions
@@ -79,8 +80,15 @@ class RegisterView(generics.CreateAPIView):
         user.save()
 
 
-        # Send verification email
-        send_verification_email(request, user)
+        if settings.TESTING:
+            user.is_verified = True
+            sh_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            product_list = UserProductList.objects.create(share_code=sh_code)
+            user.product_list = product_list
+            user.save()
+        else:
+            # Trimite email-ul de verificare doar dacă nu e test
+            send_verification_email(request, user)
 
         # Serialize the response
         response_serializer = UserSerializer(user)
@@ -129,6 +137,20 @@ class VerifyUserView(APIView):
     """
     
     def post(self, request):
+        serializer = VerifyUserSerializer(data=request.data)
+        
+        if settings.TESTING:
+            user = request.user
+            if user.is_verified:
+             return Response({"detail": "Email already verified."}, status=status.HTTP_200_OK)
+            
+            sh_code = serializer.generate_unique_share_code()
+            product_list = UserProductList.objects.create(share_code=sh_code)
+            user.product_list = product_list
+            user.is_verified = True
+
+            user.save()
+            return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
 
         token = request.data.get('token')
         uid = request.data.get('uid')
@@ -142,7 +164,7 @@ class VerifyUserView(APIView):
 
         user.is_verified = True
 
-        serializer = VerifyUserSerializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
 
         sh_code = serializer.generate_unique_share_code()
