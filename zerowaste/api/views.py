@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.core.mail import send_mail
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.exceptions import AuthenticationFailed
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class LoginView(generics.CreateAPIView):
     """
@@ -346,3 +348,32 @@ class ResetPasswordView(APIView):
         user.save()
         
         return Response({'success': 'Password reset successful'}, status=status.HTTP_200_OK)
+
+class ReceiptListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        user_preferences = user.preferences.all()
+        user_allergies = user.allergies.all()
+        
+        product_list = user.product_list
+        print(product_list.products.all())
+        print(product_list.getExpiringProducts(user.notification_day))
+        message = {
+            'type': 'askScript',
+            'message': {
+                'Allergens': [allergy.name for allergy in user_allergies],
+                'Preferences': [preference.name for preference in user_preferences],
+                'Expiring Products' : product_list.getExpiringProducts(user.notification_day)
+            }
+        }
+        
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "python_scripts",  
+            message
+            )
+
+        return Response("ok", status=status.HTTP_200_OK)
+    

@@ -56,3 +56,36 @@ class NotificationConsumer(WebsocketConsumer):
             'type': 'message',
             'payload': message
         }))
+
+
+class PythonScriptConsumer(WebsocketConsumer):
+    def connect(self):
+        self.accept()
+        async_to_sync(self.channel_layer.group_add)(
+            "python_scripts",
+            self.channel_name
+        )
+        self.send(text_data=json.dumps({
+            'message': 'Conectat la WebSocket',
+            'type': 'connected',
+        }))
+
+    def disconnect(self, close_code):
+        async_to_sync(self.channel_layer.group_discard)(
+            "python_scripts", 
+            self.channel_name
+        )
+
+
+    def receive(self, text_data):
+        data = json.loads(text_data)
+        if data['type'] == 'run':
+            print('Received')
+            print(data['payload'])
+
+    def askScript(self, event):
+        message = event['message']
+        self.send(text_data=json.dumps({
+            'type': 'message',
+            'payload': message
+        }))

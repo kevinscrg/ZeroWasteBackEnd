@@ -22,4 +22,5 @@ urlpatterns = [
     path('verify-email/', VerifyUserView.as_view(), name="verify-email"),
     path('reset-password/', ResetPasswordView.as_view(), name="reset-password"),
     path('forgot-password/', ForgotPasswordView.as_view(), name="forgot-password"),
+    path('receipts/', ReceiptListView.as_view(), name='receipt-list'),
 ]
