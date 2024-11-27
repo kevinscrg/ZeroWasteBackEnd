@@ -51,7 +51,6 @@ class User(AbstractBaseUser):
     preferred_notification_hour = models.TimeField(blank=True, null=True)  # User's preferred notification hour
     preferences = models.ManyToManyField('Preference', related_name='users', blank=True)  # User's preferences
     allergies = models.ManyToManyField('Allergy', related_name='users', blank=True)  # User's allergies
-    saved_recipes = models.ManyToManyField('Recipe', related_name='saved_by_users', blank=True)  # User's saved recipes
     is_verified = models.BooleanField(default=False) # User's email verification status
     notification_day = models.IntegerField(blank = True, null= True)  # User's preferred notification day's before expiry
     product_list = models.ForeignKey(UserProductList, on_delete=models.DO_NOTHING, blank=True, null=True)  # User's product list
@@ -76,8 +75,7 @@ class User(AbstractBaseUser):
 class UserRecipeRating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    rating = models.IntegerField()
-
+    rating = models.BooleanField()  # True for like, False for dislike
     class Meta:
         unique_together = ('user', 'recipe')  # Each user can rate each recipe once
 
