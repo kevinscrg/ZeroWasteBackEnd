@@ -358,8 +358,6 @@ class ReceiptListView(APIView):
         user_allergies = user.allergies.all()
         
         product_list = user.product_list
-        print(product_list.products.all())
-        print(product_list.getExpiringProducts(user.notification_day))
         message = {
             'type': 'askScript',
             'message': {
