@@ -1,6 +1,7 @@
 import json
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
+from django.core.cache import cache
 
 class NotificationConsumer(WebsocketConsumer):
     def connect(self):
@@ -90,8 +91,13 @@ class PythonScriptConsumer(WebsocketConsumer):
     def receive(self, text_data):
         data = json.loads(text_data)
         if data['type'] == 'run':
-            print('Received')
-            print(data['payload'])
+            payload = data['payload']
+            email = payload.get('email')
+            recepies_ids = payload.get('recipe_ids')
+            if cache.get(f"recepies_{email}"):
+                cache.delete(f"recepies_{email}")
+            cache.set(f"recepies_{email}", recepies_ids, timeout=3600)
+            
 
     def askScript(self, event):
         message = event['message']

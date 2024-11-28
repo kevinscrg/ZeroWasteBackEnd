@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError # type: ign
 from rest_framework import serializers # type: ignore
 from product.models import UserProductList
 from zerowaste import settings
-from .models import User
+from .models import Recipe, User
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -188,4 +188,9 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user       
-        
+      
+      
+class RecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = '__all__'

@@ -1,4 +1,4 @@
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import urlparse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -10,13 +10,11 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import time
 from product.models import UserProductList
 from django.contrib.auth.tokens import default_token_generator  
-from django.contrib.sites.shortcuts import get_current_site 
-from django.urls import reverse 
 from django.core.mail import send_mail
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.exceptions import AuthenticationFailed
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.core.cache import cache
 
 class LoginView(generics.CreateAPIView):
     """
@@ -353,7 +351,14 @@ class ReceiptListView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
+       
         user = request.user
+        
+        if cache.get(f"recepies_{user.email}"):
+            recepies_ids = cache.get(f"recepies_{user.email}")
+            recipes = Recipe.objects.filter(id__in=recepies_ids)
+            return Response(RecipeSerializer(recipes, many=True).data, status=status.HTTP_200_OK)
+        
         user_preferences = user.preferences.all()
         user_allergies = user.allergies.all()
         
@@ -363,7 +368,8 @@ class ReceiptListView(APIView):
             'message': {
                 'Allergens': [allergy.name for allergy in user_allergies],
                 'Preferences': [preference.name for preference in user_preferences],
-                'Expiring Products' : product_list.getExpiringProducts(user.notification_day)
+                'Expiring Products' : product_list.getExpiringProducts(user.notification_day),
+                'email': user.email
             }
         }
         
