@@ -98,6 +98,15 @@ class PythonScriptConsumer(WebsocketConsumer):
                 cache.delete(f"recepies_{email}")
             cache.set(f"recepies_{email}", recepies_ids, timeout=3600)
             
+            message = {
+                'type': 'chat_message',
+                'message': 'ok'
+            }
+            async_to_sync(self.channel_layer.group_send)(
+                f"notifications{email.split('@')[0] + email.split('@')[1]}",
+                message
+            )
+            
 
     def askScript(self, event):
         message = event['message']
