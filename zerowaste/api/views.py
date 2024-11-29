@@ -15,6 +15,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.core.cache import cache
+from rest_framework.pagination import LimitOffsetPagination
 
 class LoginView(generics.CreateAPIView):
     """
@@ -347,8 +348,13 @@ class ResetPasswordView(APIView):
         
         return Response({'success': 'Password reset successful'}, status=status.HTTP_200_OK)
 
-class ReceiptListView(APIView):
+class RecipePaginator(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 50
+
+class RecipeListView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = RecipePaginator
     
     def get(self, request):
        
@@ -357,7 +363,9 @@ class ReceiptListView(APIView):
         if cache.get(f"recepies_{user.email}"):
             recepies_ids = cache.get(f"recepies_{user.email}")
             recipes = Recipe.objects.filter(id__in=recepies_ids)
-            return Response(RecipeSerializer(recipes, many=True).data, status=status.HTTP_200_OK)
+            paginator = self.pagination_class()
+            serializer = RecipeSerializer(paginator.paginate_queryset(recipes, request), many=True)
+            return paginator.get_paginated_response(serializer.data)
         
         user_preferences = user.preferences.all()
         user_allergies = user.allergies.all()
