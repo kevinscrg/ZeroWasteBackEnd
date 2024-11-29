@@ -56,7 +56,7 @@ class UserProductListView(APIView):
             user_product_lists.save()
             
             message = {
-                    'type': 'chat_message',  
+                    'type': 'product_message',  
                     'message': 'a product has been added' 
             }
             
@@ -81,7 +81,7 @@ class UserProductListView(APIView):
             product_to_update.save()
             
             message = {
-                    'type': 'chat_message',  
+                    'type': 'product_message',  
                     'message': 'a product has been updated' 
             }
             
@@ -104,7 +104,7 @@ class UserProductListView(APIView):
             user_product_lists.save()
             
             message = {
-                    'type': 'chat_message',  
+                    'type': 'product_message',  
                     'message': 'a product has been removed' 
             }
             

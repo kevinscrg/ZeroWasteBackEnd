@@ -67,6 +67,13 @@ class NotificationConsumer(WebsocketConsumer):
             'type': 'message',
             'payload': message
         }))
+        
+    def product_message(self, event):
+        message = event['message']
+        self.send(text_data=json.dumps({
+            'type': 'product_message',
+            'payload': message
+        }))
 
 
 class PythonScriptConsumer(WebsocketConsumer):
