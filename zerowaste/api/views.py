@@ -364,7 +364,7 @@ class RecipeListView(APIView):
             recepies_ids = cache.get(f"recepies_{user.email}")
             recipes = Recipe.objects.filter(id__in=recepies_ids)
             paginator = self.pagination_class()
-            serializer = RecipeSerializer(paginator.paginate_queryset(recipes, request), many=True)
+            serializer = RecipeSerializer(paginator.paginate_queryset(recipes, request), many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
         
         user_preferences = user.preferences.all()
@@ -389,3 +389,27 @@ class RecipeListView(APIView):
 
         return Response("ok", status=status.HTTP_200_OK)
     
+class RateRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RateRecipeSerializer
+    
+    def post(self, request):
+        user = request.user
+        recipe_id = request.data.get('recipe_id')
+        rating = request.data.get('rating')
+        recipe = Recipe.objects.get(pk=recipe_id)
+        
+        if rating == None:
+            if UserRecipeRating.objects.filter(user=user, recipe=recipe).exists():
+                UserRecipeRating.objects.filter(user=user, recipe=recipe).delete()
+                return Response({"detail": "Rating deleted successfully."}, status=status.HTTP_200_OK)
+            return Response({"detail": "Rating does not exist."}, status=status.HTTP_200_OK)
+        
+        if UserRecipeRating.objects.filter(user=user, recipe=recipe).exists():
+            UserRecipeRating.objects.filter(user=user, recipe=recipe).update(rating=rating)
+            return Response({"detail": "Rating updated successfully."}, status=status.HTTP_200_OK)
+
+
+        UserRecipeRating.objects.create(user=user, recipe=recipe, rating=rating)
+        
+        return Response({"detail": "Rating added successfully."}, status=status.HTTP_200_OK)

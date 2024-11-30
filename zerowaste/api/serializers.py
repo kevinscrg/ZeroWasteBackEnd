@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError # type: ign
 from rest_framework import serializers # type: ignore
 from product.models import UserProductList
 from zerowaste import settings
-from .models import Recipe, User
+from .models import *
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -189,8 +189,21 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save()
         return user       
       
-      
+
 class RecipeSerializer(serializers.ModelSerializer):
+    rating = serializers.SerializerMethodField()
+
     class Meta:
         model = Recipe
-        fields = '__all__'
+        fields = ['id', 'link', 'name', 'image', 'recepie_type', 'difficulty', 'time', 'rating']
+
+    def get_rating(self, obj):
+        user = self.context['request'].user
+        rating = UserRecipeRating.objects.filter(user=user, recipe=obj).first()
+        return rating.rating if rating else None
+
+
+class RateRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRecipeRating
+        fields = ['recipe', 'rating']
