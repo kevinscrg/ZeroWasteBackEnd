@@ -369,6 +369,8 @@ class RecipeListView(APIView):
         
         user_preferences = user.preferences.all()
         user_allergies = user.allergies.all()
+        user_liked_recipes = list(UserRecipeRating.objects.filter(user=user, rating=True).values_list('recipe', flat=True))
+        user_disliked_recipes = list(UserRecipeRating.objects.filter(user=user, rating=False).values_list('recipe', flat=True))
         
         product_list = user.product_list
         message = {
@@ -377,6 +379,8 @@ class RecipeListView(APIView):
                 'Allergens': [allergy.name for allergy in user_allergies],
                 'Preferences': [preference.name for preference in user_preferences],
                 'Expiring Products' : product_list.getExpiringProducts(user.notification_day),
+                'Liked Recipes' : user_liked_recipes,
+                'Disliked Recipes' : user_disliked_recipes,
                 'email': user.email
             }
         }
@@ -388,6 +392,8 @@ class RecipeListView(APIView):
             )
 
         return Response("ok", status=status.HTTP_200_OK)
+    
+
     
 class RateRecipeView(APIView):
     permission_classes = [IsAuthenticated]
