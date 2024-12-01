@@ -395,6 +395,56 @@ class RecipeListView(APIView):
     
 
     
+class FilterRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = RecipePaginator
+
+    def get(self, request):
+        user = request.user
+        cached_recipes = cache.get(f"recepies_{user.email}")
+        
+        if not cached_recipes:
+            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Obține filtrele direct din query params
+        time = request.query_params.get('filter[time]', None)
+        recipe_type = request.query_params.get('filter[recipe_type]', None)
+        difficulty = []
+        for key, value in request.query_params.items():
+            if key.startswith('filter[difficulty][') and key.endswith(']'):
+                difficulty.append(value)
+        print(recipe_type,time,difficulty)
+
+        # Transformă timpul în număr, dacă este prezent
+        if time is not None:
+            try:
+                time = int(time)
+            except ValueError:
+                return Response({"detail": "Invalid time value."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filtrează rețetele
+        recipes = Recipe.objects.filter(id__in=cached_recipes)
+
+        if recipe_type is not None:
+            recipes = recipes.filter(recipe_type=recipe_type)
+
+        if difficulty:
+            recipes = recipes.filter(difficulty__in=difficulty)
+
+        if time is not None:
+            recipes = recipes.filter(time__lte=time)
+
+        if not recipes.exists():
+            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Paginare și serializare
+        paginator = self.pagination_class()
+        paginated_recipes = paginator.paginate_queryset(recipes, request)
+        serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
+
+        return paginator.get_paginated_response(serializer.data)
+     
+        
 class RateRecipeView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = RateRecipeSerializer

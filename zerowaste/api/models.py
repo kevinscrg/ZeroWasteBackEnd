@@ -28,7 +28,7 @@ class Recipe(models.Model):
     image = models.URLField(null=True, blank=True)
     difficulty = models.IntegerField(null=True, blank=True)
     time = models.IntegerField(null=True, blank=True)
-    recepie_type = models.CharField(max_length=255, null=True, blank=True)    
+    recipe_type = models.CharField(max_length=255, null=True, blank=True)    
 
     def __str__(self):
         return self.name

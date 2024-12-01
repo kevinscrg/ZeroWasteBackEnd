@@ -195,7 +195,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ['id', 'link', 'name', 'image', 'recepie_type', 'difficulty', 'time', 'rating']
+        fields = ['id', 'link', 'name', 'image', 'recipe_type', 'difficulty', 'time', 'rating']
 
     def get_rating(self, obj):
         user = self.context['request'].user

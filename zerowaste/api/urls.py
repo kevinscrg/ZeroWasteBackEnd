@@ -23,5 +23,6 @@ urlpatterns = [
     path('reset-password/', ResetPasswordView.as_view(), name="reset-password"),
     path('forgot-password/', ForgotPasswordView.as_view(), name="forgot-password"),
     path('recipes/', RecipeListView.as_view(), name='receipt-list'),
+    path('filter-recipes/', FilterRecipeView.as_view(), name='filter-recipes'),
     path('rate-recipe/', RateRecipeView.as_view(), name="rate-recipe"),
 ]
