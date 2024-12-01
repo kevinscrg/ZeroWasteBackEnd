@@ -363,6 +363,8 @@ class RecipeListView(APIView):
         if cache.get(f"recepies_{user.email}"):
             recepies_ids = cache.get(f"recepies_{user.email}")
             recipes = Recipe.objects.filter(id__in=recepies_ids)
+            disliked_recipies_ids = UserRecipeRating.objects.filter(user=user, rating=False).values_list('recipe', flat=True)         
+            recipes = recipes.exclude(id__in=disliked_recipies_ids)
             paginator = self.pagination_class()
             serializer = RecipeSerializer(paginator.paginate_queryset(recipes, request), many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
@@ -403,27 +405,34 @@ class FilterRecipeView(APIView):
         user = request.user
         cached_recipes = cache.get(f"recepies_{user.email}")
         
-        if not cached_recipes:
-            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Obține filtrele direct din query params
         time = request.query_params.get('filter[time]', None)
         recipe_type = request.query_params.get('filter[recipe_type]', None)
         difficulty = []
+        favourites = request.query_params.get('filter[favourites]', None)
+        if favourites is not None:
+            if favourites not in ['true', 'false']:
+                return Response({"detail": "Invalid favourites value."}, status=status.HTTP_400_BAD_REQUEST)
+            favourites = True if favourites == 'true' else False
         for key, value in request.query_params.items():
             if key.startswith('filter[difficulty][') and key.endswith(']'):
                 difficulty.append(value)
-        print(recipe_type,time,difficulty)
 
-        # Transformă timpul în număr, dacă este prezent
         if time is not None:
             try:
                 time = int(time)
             except ValueError:
                 return Response({"detail": "Invalid time value."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if favourites is not None:
+            rated_recipe_ids = UserRecipeRating.objects.filter(user=user, rating=favourites).values_list('recipe', flat=True)
+            recipes = Recipe.objects.filter(id__in=rated_recipe_ids)
 
-        # Filtrează rețetele
-        recipes = Recipe.objects.filter(id__in=cached_recipes)
+        else:
+            if not cached_recipes:
+                return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+
+            recipes = Recipe.objects.filter(id__in=cached_recipes)
+
 
         if recipe_type is not None:
             recipes = recipes.filter(recipe_type=recipe_type)
@@ -437,7 +446,6 @@ class FilterRecipeView(APIView):
         if not recipes.exists():
             return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Paginare și serializare
         paginator = self.pagination_class()
         paginated_recipes = paginator.paginate_queryset(recipes, request)
         serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
