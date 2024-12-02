@@ -58,21 +58,21 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'api.User'  
 ASGI_APPLICATION = 'zerowaste.asgi.application'
 
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer",
-#     },
-# }
-
-#! nu stergeti asta, e pentru cand rulez pentru websocket si bonuri, va las cel de sus sa nu va crape la postman
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],  # Redis trebuie să ruleze pe acest port
-        },
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
+
+#! nu stergeti asta, e pentru cand rulez pentru websocket si bonuri, va las cel de sus sa nu va crape la postman
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],  # Redis trebuie să ruleze pe acest port
+#         },
+#     },
+# }
 
 # settings.py
 
