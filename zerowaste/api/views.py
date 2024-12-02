@@ -1,4 +1,4 @@
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import urlparse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -10,11 +10,12 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import time
 from product.models import UserProductList
 from django.contrib.auth.tokens import default_token_generator  
-from django.contrib.sites.shortcuts import get_current_site 
-from django.urls import reverse 
 from django.core.mail import send_mail
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.exceptions import AuthenticationFailed
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from django.core.cache import cache
+from rest_framework.pagination import LimitOffsetPagination
 
 class LoginView(generics.CreateAPIView):
     """
@@ -297,6 +298,23 @@ class NotificationDayUpdateView(generics.UpdateAPIView):
         return Response({"notification_day": user.notification_day},
                         status=status.HTTP_200_OK)
         
+        
+class DarkModeUpdateView(generics.UpdateAPIView):
+    serializer_class = DarkModeUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.dark_mode = not user.dark_mode
+        user.save()
+
+        return Response({"dark_mode": user.dark_mode},
+                        status=status.HTTP_200_OK)
+
+        
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -346,3 +364,160 @@ class ResetPasswordView(APIView):
         user.save()
         
         return Response({'success': 'Password reset successful'}, status=status.HTTP_200_OK)
+
+class RecipePaginator(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 50
+
+class RecipeListView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = RecipePaginator
+    
+    def get(self, request):
+       
+        user = request.user
+        
+        if cache.get(f"recepies_{user.email}"):
+            recepies_ids = cache.get(f"recepies_{user.email}")
+            recipes = Recipe.objects.filter(id__in=recepies_ids)
+            disliked_recipies_ids = UserRecipeRating.objects.filter(user=user, rating=False).values_list('recipe', flat=True)         
+            recipes = recipes.exclude(id__in=disliked_recipies_ids)
+            paginator = self.pagination_class()
+            serializer = RecipeSerializer(paginator.paginate_queryset(recipes, request), many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
+        
+        user_preferences = user.preferences.all()
+        user_allergies = user.allergies.all()
+        user_liked_recipes = list(UserRecipeRating.objects.filter(user=user, rating=True).values_list('recipe', flat=True))
+        user_disliked_recipes = list(UserRecipeRating.objects.filter(user=user, rating=False).values_list('recipe', flat=True))
+        
+        product_list = user.product_list
+        message = {
+            'type': 'askScript',
+            'message': {
+                'Allergens': [allergy.name for allergy in user_allergies],
+                'Preferences': [preference.name for preference in user_preferences],
+                'Expiring Products' : product_list.getExpiringProducts(user.notification_day),
+                'Liked Recipes' : user_liked_recipes,
+                'Disliked Recipes' : user_disliked_recipes,
+                'email': user.email
+            }
+        }
+        
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "python_scripts",  
+            message
+            )
+
+        return Response("ok", status=status.HTTP_200_OK)
+    
+
+    
+class FilterRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = RecipePaginator
+
+    def get(self, request):
+        user = request.user
+        cached_recipes = cache.get(f"recepies_{user.email}")
+        
+        time = request.query_params.get('filter[time]', None)
+        recipe_type = request.query_params.get('filter[recipe_type]', None)
+        difficulty = []
+        favourites = request.query_params.get('filter[favourites]', None)
+        if favourites is not None:
+            if favourites not in ['true', 'false']:
+                return Response({"detail": "Invalid favourites value."}, status=status.HTTP_400_BAD_REQUEST)
+            favourites = True if favourites == 'true' else False
+        for key, value in request.query_params.items():
+            if key.startswith('filter[difficulty][') and key.endswith(']'):
+                difficulty.append(value)
+
+        if time is not None:
+            try:
+                time = int(time)
+            except ValueError:
+                return Response({"detail": "Invalid time value."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if favourites is not None:
+            rated_recipe_ids = UserRecipeRating.objects.filter(user=user, rating=favourites).values_list('recipe', flat=True)
+            recipes = Recipe.objects.filter(id__in=rated_recipe_ids)
+
+        else:
+            if not cached_recipes:
+                return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+
+            recipes = Recipe.objects.filter(id__in=cached_recipes)
+
+
+        if recipe_type is not None:
+            recipes = recipes.filter(recipe_type=recipe_type)
+
+        if difficulty:
+            recipes = recipes.filter(difficulty__in=difficulty)
+
+        if time is not None:
+            recipes = recipes.filter(time__lte=time)
+
+        if not recipes.exists():
+            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+
+        paginator = self.pagination_class()
+        paginated_recipes = paginator.paginate_queryset(recipes, request)
+        serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
+
+        return paginator.get_paginated_response(serializer.data)
+     
+        
+class RateRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RateRecipeSerializer
+    
+    def post(self, request):
+        user = request.user
+        recipe_id = request.data.get('recipe_id')
+        rating = request.data.get('rating')
+        recipe = Recipe.objects.get(pk=recipe_id)
+        
+        if rating == None:
+            if UserRecipeRating.objects.filter(user=user, recipe=recipe).exists():
+                UserRecipeRating.objects.filter(user=user, recipe=recipe).delete()
+                return Response({"detail": "Rating deleted successfully."}, status=status.HTTP_200_OK)
+            return Response({"detail": "Rating does not exist."}, status=status.HTTP_200_OK)
+        
+        if UserRecipeRating.objects.filter(user=user, recipe=recipe).exists():
+            UserRecipeRating.objects.filter(user=user, recipe=recipe).update(rating=rating)
+            return Response({"detail": "Rating updated successfully."}, status=status.HTTP_200_OK)
+
+
+        UserRecipeRating.objects.create(user=user, recipe=recipe, rating=rating)
+        
+        return Response({"detail": "Rating added successfully."}, status=status.HTTP_200_OK)
+    
+class SearchRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = RecipePaginator
+    
+    def get(self, request):
+        user = request.user
+        query = request.query_params.get('search', None)
+        query = query.lower()
+        cached_recipes = cache.get(f"recepies_{user.email}")
+        if not cached_recipes:
+            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if query is None:
+            return Response({"detail": "No query provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        recipes = Recipe.objects.filter(id__in=cached_recipes)
+        
+        recipes = recipes.filter(name__icontains=query)
+        if not recipes.exists():
+            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        paginator = self.pagination_class()
+        paginated_recipes = paginator.paginate_queryset(recipes, request)
+        serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
+        
+        return paginator.get_paginated_response(serializer.data)

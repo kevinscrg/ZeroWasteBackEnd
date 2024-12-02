@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError # type: ign
 from rest_framework import serializers # type: ignore
 from product.models import UserProductList
 from zerowaste import settings
-from .models import User
+from .models import *
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -87,7 +87,8 @@ class UserSerializer(serializers.ModelSerializer):
             'preferred_notification_hour', 
             'preferences', 
             'allergies', 
-            'notification_day'
+            'notification_day',
+            'dark_mode'
         ]
 
     def get_preferences(self, obj):
@@ -164,7 +165,11 @@ class NotificationDayUpdateSerializer(serializers.ModelSerializer):
         fields = ['notification_day']
         
         
-User = get_user_model()       
+class DarkModeUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['dark_mode']
+
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     new_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -188,4 +193,22 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user       
-        
+      
+
+class RecipeSerializer(serializers.ModelSerializer):
+    rating = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ['id', 'link', 'name', 'image', 'recipe_type', 'difficulty', 'time', 'rating']
+
+    def get_rating(self, obj):
+        user = self.context['request'].user
+        rating = UserRecipeRating.objects.filter(user=user, recipe=obj).first()
+        return rating.rating if rating else None
+
+
+class RateRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRecipeRating
+        fields = ['recipe', 'rating']
