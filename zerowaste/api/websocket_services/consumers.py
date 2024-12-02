@@ -53,18 +53,27 @@ class NotificationConsumer(WebsocketConsumer):
             else:
                 self.close()
         else:
+            share_code = data['payload'].get('share_code')
+            if not share_code:
+                self.send(text_data=json.dumps({
+                'type': 'error',
+                'payload': {
+                    'message': 'Share code is required to send a message.'
+                }
+            }))
+                return
             async_to_sync(self.channel_layer.group_send)(
-                "notifications",
+                f"notifications{share_code}",
                 {
-                    "type": "chat_message",
+                    "type": "product_message",
                     "message": data['payload']
                 }
             )
 
-    def chat_message(self, event):
+    def recipe(self, event):
         message = event['message']
         self.send(text_data=json.dumps({
-            'type': 'message',
+            'type': 'recipe',
             'payload': message
         }))
         
@@ -106,7 +115,7 @@ class PythonScriptConsumer(WebsocketConsumer):
             cache.set(f"recepies_{email}", recepies_ids, timeout=3600)
             
             message = {
-                'type': 'chat_message',
+                'type': 'recipe',
                 'message': 'ok'
             }
             async_to_sync(self.channel_layer.group_send)(

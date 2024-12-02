@@ -54,10 +54,12 @@ class UserProductListView(APIView):
             user_product_lists = request.user.product_list
             user_product_lists.products.add(serializer.save())
             user_product_lists.save()
-            
             message = {
                     'type': 'product_message',  
-                    'message': 'a product has been added' 
+                    'message': {
+                        'type': 'add_product',
+                        'data': ProductSerializer(serializer.save()).data
+                    }
             }
             
             channel_layer = get_channel_layer()
@@ -82,7 +84,10 @@ class UserProductListView(APIView):
             
             message = {
                     'type': 'product_message',  
-                    'message': 'a product has been updated' 
+                    'message': {
+                        'type': 'update_product',
+                        'data': ProductSerializer(product_to_update).data
+                    }
             }
             
             channel_layer = get_channel_layer()
@@ -105,7 +110,10 @@ class UserProductListView(APIView):
             
             message = {
                     'type': 'product_message',  
-                    'message': 'a product has been removed' 
+                    'message': {
+                        'type': 'delete_product',
+                        'data': serializer.validated_data['id']
+                    }
             }
             
             channel_layer = get_channel_layer()

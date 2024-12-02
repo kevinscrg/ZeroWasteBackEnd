@@ -54,6 +54,7 @@ class User(AbstractBaseUser):
     is_verified = models.BooleanField(default=False) # User's email verification status
     notification_day = models.IntegerField(blank = True, null= True)  # User's preferred notification day's before expiry
     product_list = models.ForeignKey(UserProductList, on_delete=models.DO_NOTHING, blank=True, null=True)  # User's product list
+    dark_mode = models.BooleanField(default=False)  # User's dark mode preference
     
 
     USERNAME_FIELD = 'email'

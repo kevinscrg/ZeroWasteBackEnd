@@ -87,7 +87,8 @@ class UserSerializer(serializers.ModelSerializer):
             'preferred_notification_hour', 
             'preferences', 
             'allergies', 
-            'notification_day'
+            'notification_day',
+            'dark_mode'
         ]
 
     def get_preferences(self, obj):
@@ -164,7 +165,11 @@ class NotificationDayUpdateSerializer(serializers.ModelSerializer):
         fields = ['notification_day']
         
         
-User = get_user_model()       
+class DarkModeUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['dark_mode']
+
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     new_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})

@@ -37,7 +37,9 @@ def process_and_save_products_task(image_file_path, user_id):
         
         message = {
             "type": "product_message",
-            "message": f"Receipt processed successfully. {len(products)} products added to your list."
+            "message": {
+                "type": "add_products",
+                "data": "ok"}
         }
         
         channel_layer = get_channel_layer()

@@ -47,8 +47,14 @@ class UserProductList(models.Model):
     
     def getExpiringProducts(self, notification_day):
         products = self.products.all()
+        
+        valid_products = [
+            product for product in products
+            if product.best_before or product.opened
+        ]
+        
         products_sorted = sorted(
-            products,
+            valid_products,
             key=lambda product: (
                 product.best_before,  
                 product.calculate_opened_plus_consumption() or product.best_before  

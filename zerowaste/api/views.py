@@ -298,6 +298,23 @@ class NotificationDayUpdateView(generics.UpdateAPIView):
         return Response({"notification_day": user.notification_day},
                         status=status.HTTP_200_OK)
         
+        
+class DarkModeUpdateView(generics.UpdateAPIView):
+    serializer_class = DarkModeUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.dark_mode = not user.dark_mode
+        user.save()
+
+        return Response({"dark_mode": user.dark_mode},
+                        status=status.HTTP_200_OK)
+
+        
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 

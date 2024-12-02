@@ -17,6 +17,7 @@ urlpatterns = [
     path('user/update/allergies/', AllergiesUpdateView.as_view(), name='update-allergies'),
     path('user/update/notification_day/<int:new_day>/', NotificationDayUpdateView.as_view(),
          name='update-notification-day'),
+    path('user/update/dark_mode/', DarkModeUpdateView.as_view(), name='update-dark-mode'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('verify-email/', VerifyUserView.as_view(), name="verify-email"),
