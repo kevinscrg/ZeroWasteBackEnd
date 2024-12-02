@@ -477,3 +477,30 @@ class RateRecipeView(APIView):
         UserRecipeRating.objects.create(user=user, recipe=recipe, rating=rating)
         
         return Response({"detail": "Rating added successfully."}, status=status.HTTP_200_OK)
+    
+class SearchRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = RecipePaginator
+    
+    def get(self, request):
+        user = request.user
+        query = request.query_params.get('search', None)
+        query = query.lower()
+        cached_recipes = cache.get(f"recepies_{user.email}")
+        if not cached_recipes:
+            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if query is None:
+            return Response({"detail": "No query provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        recipes = Recipe.objects.filter(id__in=cached_recipes)
+        
+        recipes = recipes.filter(name__icontains=query)
+        if not recipes.exists():
+            return Response({"detail": "No recipes found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        paginator = self.pagination_class()
+        paginated_recipes = paginator.paginate_queryset(recipes, request)
+        serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
+        
+        return paginator.get_paginated_response(serializer.data)
