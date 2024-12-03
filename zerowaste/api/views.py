@@ -7,7 +7,7 @@ from .serializers import *
 from .models import *
 from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
-from datetime import time
+from datetime import timedelta, time
 from product.models import UserProductList
 from django.contrib.auth.tokens import default_token_generator  
 from django.core.mail import send_mail
@@ -412,8 +412,6 @@ class RecipeListView(APIView):
 
         return Response("ok", status=status.HTTP_200_OK)
     
-
-    
 class FilterRecipeView(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = RecipePaginator
@@ -468,7 +466,6 @@ class FilterRecipeView(APIView):
         serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
 
         return paginator.get_paginated_response(serializer.data)
-     
         
 class RateRecipeView(APIView):
     permission_classes = [IsAuthenticated]
@@ -521,3 +518,37 @@ class SearchRecipeView(APIView):
         serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
         
         return paginator.get_paginated_response(serializer.data)
+
+class ExpiringProductsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if not user.product_list or user.notification_day is None:
+            return Response({"error": "No product list or notification day set."}, status=400)
+
+        product_list = user.product_list
+        notification_day = user.notification_day
+
+        # Fetch expiring product names
+        expiring_product_names = product_list.getExpiringProducts(notification_day)
+
+        # Fetch full product objects for the expiring products
+        expiring_products = product_list.products.filter(name__in=expiring_product_names)
+
+        # Prepare data for serialization
+        expiring_product_data = [
+            {
+                "name": product.name,
+                "expiry_date": product.best_before
+                or (product.opened + timedelta(days=product.consumption_days)),
+            }
+            for product in expiring_products
+        ]
+
+        # Serialize the data
+        serializer = ExpiringProductSerializer(data=expiring_product_data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        return Response({"expiring_products": serializer.data})

@@ -2,7 +2,8 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from api.models import User, Preference, Allergy, Recipe 
+from api.models import *
+from product.models import *
 from django.contrib.auth import get_user_model
 from datetime import time
 
@@ -274,3 +275,112 @@ class VerifyEmailViewTests(TestCase):
         """
         response = self.client.get(self.verify_url)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class ExpiringProductsViewTest(TestCase):
+    def setUp(self):
+        # Set up client and user
+        self.client = APIClient()
+        self.user_email = "user@example.com"
+        self.user_password = "password123"
+        self.user = User.objects.create(
+            email=self.user_email,
+            password=self.user_password,
+        )
+
+        self.user.notification_day = 2
+
+        # Authenticate the client
+        response = self.client.post(reverse('login'), {
+            'email': self.user_email,
+            'password': self.user_password,
+        })
+        self.access_token = response.data['access']
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.access_token)
+
+        # Set up user product list
+        self.product_list = UserProductList.objects.create(share_code="TEST01")
+        self.user.product_list = self.product_list
+        self.user.save()
+
+        # Set up products
+        today = date.today()
+        self.product1 = Product.objects.create(
+            name="Milk",
+            best_before=today + timedelta(days=1),  # Expiring soon
+        )
+        self.product2 = Product.objects.create(
+            name="Yogurt",
+            opened=today - timedelta(days=3),  # Opened recently
+            consumption_days=4,  # Still consumable
+        )
+        self.product3 = Product.objects.create(
+            name="Bread",
+            best_before=today - timedelta(days=1),  # Already expired
+        )
+
+        # Link products to the user's product list
+        self.product_list.products.set([self.product1, self.product2, self.product3])
+
+    def test_get_expiring_products_success(self):
+        """
+        Test fetching expiring products successfully.
+        """
+        response = self.client.get(reverse('expiring-products-notification'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("expiring_products", response.data)
+
+        # Check that only the correct products are returned
+        product_names = [p["name"] for p in response.data["expiring_products"]]
+        self.assertIn("Milk", product_names)
+        self.assertIn("Yogurt", product_names)
+        self.assertNotIn("Bread", product_names)  # Already expired
+
+    def test_no_products_in_list(self):
+        """
+        Test the API when there are no products in the user's product list.
+        """
+        self.product_list.products.clear()  # Remove all products from the list
+
+        response = self.client.get(reverse('expiring-products-notification'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["expiring_products"], [])
+
+    def test_no_product_list_for_user(self):
+        """
+        Test the API when the user has no product list assigned.
+        """
+        self.user.product_list = None
+        self.user.save()
+
+        response = self.client.get(reverse('expiring-products-notification'))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "No product list or notification day set.")
+
+    def test_no_notification_day_set(self):
+        """
+        Test the API when the user has no notification day set.
+        """
+        self.user.notification_day = None
+        self.user.save()
+
+        response = self.client.get(reverse('expiring-products-notification'))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "No product list or notification day set.")
+
+    def test_unauthenticated_request(self):
+        """
+        Test the API when the request is unauthenticated.
+        """
+        self.client.credentials()  # Remove authentication
+
+        response = self.client.get(reverse('expiring-products-notification'))
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("detail", response.data)
+        self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")

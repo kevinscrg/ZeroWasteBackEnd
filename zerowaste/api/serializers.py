@@ -212,3 +212,7 @@ class RateRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRecipeRating
         fields = ['recipe', 'rating']
+
+class ExpiringProductSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    expiry_date = serializers.DateField()

@@ -17,26 +17,25 @@ class Product(models.Model):
             return self.opened + timedelta(days=self.consumption_days)
         return None
     
-    def is_expiring_soon(product, today, notification_day=1):
-    
+    def is_expiring_soon(self, today, notification_day=1):
         expiration_date = None
 
-        if product.best_before:
-            expiration_date = product.best_before
+        # Use best_before if available
+        if self.best_before:
+            expiration_date = self.best_before
 
-        if product.opened and product.consumption_days:
-            opened_expiration = product.opened + timedelta(days=product.consumption_days)
-           
-            if expiration_date:
-                expiration_date = min(expiration_date, opened_expiration)
-            else:
-                expiration_date = opened_expiration
+        # Calculate expiration from opened + consumption_days if applicable
+        if self.opened and self.consumption_days:
+            opened_expiration = self.opened + timedelta(days=self.consumption_days)
+            expiration_date = min(expiration_date, opened_expiration) if expiration_date else opened_expiration
 
-
+        # If no expiration date is available, it's not expiring soon
         if not expiration_date:
             return False
 
+        # Check if within the notification window
         return today <= expiration_date <= today + timedelta(days=notification_day)
+
 
 class UserProductList(models.Model):
     share_code = models.CharField(max_length=6, unique=True) 
@@ -47,17 +46,26 @@ class UserProductList(models.Model):
     
     def getExpiringProducts(self, notification_day):
         products = self.products.all()
-        
+
+        # Filter products with valid expiration dates
         valid_products = [
             product for product in products
-            if product.best_before or product.opened
+            if product.best_before or (product.opened and product.consumption_days)
         ]
-        
+
+        # Sort by earliest expiration date
         products_sorted = sorted(
             valid_products,
             key=lambda product: (
-                product.best_before,  
-                product.calculate_opened_plus_consumption() or product.best_before  
+                product.best_before or product.calculate_opened_plus_consumption() or date.max
             )
-        )        
-        return [product.name for product in products_sorted if product.best_before and product.is_expiring_soon(date.today(), notification_day)]
+        )
+
+        # Identify expiring products
+        today = date.today()
+        expiring_products = [
+            product for product in products_sorted
+            if product.is_expiring_soon(today, notification_day)
+        ]
+
+        return [product.name for product in expiring_products]
