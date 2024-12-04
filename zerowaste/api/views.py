@@ -16,6 +16,8 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.core.cache import cache
 from rest_framework.pagination import LimitOffsetPagination
+from django.db.models import Case, When
+
 
 class LoginView(generics.CreateAPIView):
     """
@@ -378,8 +380,9 @@ class RecipeListView(APIView):
         user = request.user
         
         if cache.get(f"recepies_{user.email}"):
-            recepies_ids = cache.get(f"recepies_{user.email}")
-            recipes = Recipe.objects.filter(id__in=recepies_ids)
+            recipe_ids = cache.get(f"recepies_{user.email}")
+            recipes = Recipe.objects.filter(id__in=recipe_ids).order_by(
+                Case(*[When(id=pk, then=pos) for pos, pk in enumerate(recipe_ids)]))
             disliked_recipies_ids = UserRecipeRating.objects.filter(user=user, rating=False).values_list('recipe', flat=True)         
             recipes = recipes.exclude(id__in=disliked_recipies_ids)
             paginator = self.pagination_class()
@@ -521,3 +524,35 @@ class SearchRecipeView(APIView):
         serializer = RecipeSerializer(paginated_recipes, many=True, context={'request': request})
         
         return paginator.get_paginated_response(serializer.data)
+    
+class RefreshRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+
+        user_preferences = user.preferences.all()
+        user_allergies = user.allergies.all()
+        user_liked_recipes = list(UserRecipeRating.objects.filter(user=user, rating=True).values_list('recipe', flat=True))
+        user_disliked_recipes = list(UserRecipeRating.objects.filter(user=user, rating=False).values_list('recipe', flat=True))
+        
+        product_list = user.product_list
+        message = {
+            'type': 'askScript',
+            'message': {
+                'Allergens': [allergy.name for allergy in user_allergies],
+                'Preferences': [preference.name for preference in user_preferences],
+                'Expiring Products' : product_list.getExpiringProducts(user.notification_day),
+                'Liked Recipes' : user_liked_recipes,
+                'Disliked Recipes' : user_disliked_recipes,
+                'email': user.email
+            }
+        }
+        
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "python_scripts",  
+            message
+            )
+
+        return Response("ok", status=status.HTTP_200_OK)

@@ -27,4 +27,5 @@ urlpatterns = [
     path('filter-recipes/', FilterRecipeView.as_view(), name='filter-recipes'),
     path('rate-recipe/', RateRecipeView.as_view(), name="rate-recipe"),
     path('search-recipes/', SearchRecipeView.as_view(), name='search-recipes'),
+    path('refresh-recipes/', RefreshRecipeView.as_view(), name='refresh-recipes'),
 ]
