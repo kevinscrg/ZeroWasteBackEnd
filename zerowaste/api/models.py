@@ -52,7 +52,7 @@ class User(AbstractBaseUser):
     preferences = models.ManyToManyField('Preference', related_name='users', blank=True)  # User's preferences
     allergies = models.ManyToManyField('Allergy', related_name='users', blank=True)  # User's allergies
     is_verified = models.BooleanField(default=False) # User's email verification status
-    notification_day = models.IntegerField(blank = True, null= True)  # User's preferred notification day's before expiry
+    notification_day = models.IntegerField(default=1)  # User's preferred notification day's before expiry
     product_list = models.ForeignKey(UserProductList, on_delete=models.DO_NOTHING, blank=True, null=True)  # User's product list
     dark_mode = models.BooleanField(default=False)  # User's dark mode preference
     

@@ -50,13 +50,13 @@ class UserProductList(models.Model):
         
         valid_products = [
             product for product in products
-            if product.best_before or product.opened
+            if product.best_before or (product.opened and product.consumption_days)
         ]
         
         products_sorted = sorted(
             valid_products,
             key=lambda product: (
-                product.best_before,  
+                product.best_before or date.max,  
                 product.calculate_opened_plus_consumption() or product.best_before  
             )
         )        
