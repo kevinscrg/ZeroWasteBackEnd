@@ -132,7 +132,7 @@ class DeleteAccountView(APIView):
                     product.delete()
                 old_product_list.delete()
             return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-        return Response({"detail": "wrong password"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"detail": "Password is incorrect"}, status=status.HTTP_401_UNAUTHORIZED)
     
 class VerifyUserView(APIView):
     """
@@ -325,7 +325,7 @@ class ChangePasswordView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
     
 class ForgotPasswordView(APIView):
     def post(self, request):
