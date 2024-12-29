@@ -36,7 +36,7 @@ def process_and_save_products_task(image_file_path, user_id):
         user_product_list.save()
         
         message = {
-            "type": "product_message",
+            "type": "productmessage",
             "message": {
                 "type": "add_products",
                 "data": "ok"}

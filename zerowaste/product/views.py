@@ -55,13 +55,12 @@ class UserProductListView(APIView):
             user_product_lists.products.add(serializer.save())
             user_product_lists.save()
             message = {
-                    'type': 'product_message',  
+                    'type': 'productmessage',  
                     'message': {
                         'type': 'add_product',
                         'data': ProductSerializer(serializer.save()).data
                     }
             }
-            
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f'notifications{user_product_lists.share_code}',
@@ -83,7 +82,7 @@ class UserProductListView(APIView):
             product_to_update.save()
             
             message = {
-                    'type': 'product_message',  
+                    'type': 'productmessage',  
                     'message': {
                         'type': 'update_product',
                         'data': ProductSerializer(product_to_update).data
@@ -109,7 +108,7 @@ class UserProductListView(APIView):
             user_product_lists.save()
             
             message = {
-                    'type': 'product_message',  
+                    'type': 'productmessage',  
                     'message': {
                         'type': 'delete_product',
                         'data': serializer.validated_data['id']

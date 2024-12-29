@@ -31,7 +31,6 @@ class NotificationConsumer(WebsocketConsumer):
                 group_name_share_code = f"notifications{share_code}"
                 group_name_email = f"notifications{email.split('@')[0] + email.split('@')[1]}"
 
-  
                 async_to_sync(self.channel_layer.group_add)(
                     group_name_share_code,
                     self.channel_name
@@ -65,7 +64,7 @@ class NotificationConsumer(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_send)(
                 f"notifications{share_code}",
                 {
-                    "type": "product_message",
+                    "type": "productmessage",
                     "message": data['payload']
                 }
             )
@@ -77,10 +76,10 @@ class NotificationConsumer(WebsocketConsumer):
             'payload': message
         }))
         
-    def product_message(self, event):
+    def productmessage(self, event):
         message = event['message']
         self.send(text_data=json.dumps({
-            'type': 'product_message',
+            'type': 'productmessage',
             'payload': message
         }))
 
