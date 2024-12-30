@@ -22,7 +22,7 @@ if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 import os
 
-log_file = os.path.join(logs_dir, 'websocket_events.log')
+log_file = os.path.join(logs_dir, 'zerowaste.log')
 if os.path.exists(log_file):
     with open(log_file, 'w'):
         pass  # Golește conținutul fișierului
@@ -241,17 +241,17 @@ LOGGING = {
             'formatter': 'verbose',
         },
         # Handler pentru scrierea în fișier (exclude INFO)
-        'ws_file': {
+        'zerowaste_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join('Logs', 'websocket_events.log'),
+            'filename': os.path.join('Logs', 'zerowaste.log'),
             'formatter': 'verbose',
         },
     },
     'loggers': {
         # Logger pentru evenimentele Daphne (inclusiv WebSocket)
         'daphne': {
-            'handlers': ['console', 'ws_file'],  # Trimite logurile atât în consolă, cât și în fișier
+            'handlers': ['console', 'zerowaste_file'],  # Trimite logurile atât în consolă, cât și în fișier
             'level': 'DEBUG',
             'propagate': False,
         },
