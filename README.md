@@ -1,6 +1,7 @@
 # ZeroWasteBackEnd
 
-ZeroWasteFrontend: <a>https://github.com/kevinscrg/ZeroWasteFrontEnd</a>
+ZeroWasteFrontend: <a>https://github.com/kriss1809/ZeroWasteFrontEnd</a>
+<br>
 ZeroWasteAI: <a>https://github.com/kriss1809/ZeroWasteAI</a>
 
 Before stating the API, run the following commands:<br>
