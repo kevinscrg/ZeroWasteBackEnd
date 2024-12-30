@@ -1,6 +1,7 @@
 from datetime import date
 import sys
 from django.apps import AppConfig
+import logging
 
 
 class ProductConfig(AppConfig):
@@ -11,6 +12,7 @@ class ProductConfig(AppConfig):
         if "zerowaste.asgi:application" in sys.argv:
             from product.services.tasks import schedule_daily_emails  
             today = date.today()
-            print(f"Scheduling daily emails for {today}...")
+            logger = logging.getLogger("daphne")
+            logger.info( f"Scheduling daily emails for {today}...")
             schedule_daily_emails.delay()
             return super().ready()
