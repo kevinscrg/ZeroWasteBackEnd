@@ -225,8 +225,11 @@ class PreferredNotificationHourUpdateView(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         new_hour = self.kwargs.get("new_hour")+":00"
         try:
-            hour, minute, second = map(int, new_hour.split(":"))
-            time_value = time(hour, minute, second)
+            if "--" in new_hour:
+                time_value = None
+            else:
+                hour, minute, second = map(int, new_hour.split(":"))
+                time_value = time(hour, minute, second)
         except ValueError:
             return Response({"error": "Invalid time format. Use HH:MM:SS."},
                             status=status.HTTP_400_BAD_REQUEST)

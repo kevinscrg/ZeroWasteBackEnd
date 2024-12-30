@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-)dn0eeifdmtbr&*qxkvttqor9f$uk$w1l!)5j#7a_c45tad*17
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.100.92","192.168.100.97",'127.0.0.1', 'localhost', '192.168.1.9', '192.168.101.17'] 
+ALLOWED_HOSTS = ["192.168.100.92","192.168.100.97",'127.0.0.1', 'localhost', '192.168.1.9', '192.168.101.17', '192.168.100.186'] 
 
 
 # Application definition
@@ -104,7 +104,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "zerowaste.urls"
-CORS_ALLOWED_ORIGINS = ["http://192.168.100.97:8100", 'http://localhost:8100', 'http://192.168.100.92:8100', 'http://192.168.101.17:8100'] 
+CORS_ALLOWED_ORIGINS = ["http://192.168.100.97:8100", 'http://localhost:8100', 'http://192.168.100.186:8100', 'http://192.168.101.17:8100'] 
 
 TEMPLATES = [
     {
