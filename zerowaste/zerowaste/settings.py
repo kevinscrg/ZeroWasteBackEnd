@@ -12,10 +12,20 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import sys
-
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+logs_dir = os.path.join(BASE_DIR, 'Logs')
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
+import os
+
+log_file = os.path.join(logs_dir, 'websocket_events.log')
+if os.path.exists(log_file):
+    with open(log_file, 'w'):
+        pass  # Golește conținutul fișierului
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,7 +37,7 @@ SECRET_KEY = "django-insecure-)dn0eeifdmtbr&*qxkvttqor9f$uk$w1l!)5j#7a_c45tad*17
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.100.92","192.168.100.97",'127.0.0.1', 'localhost', '192.168.1.9', '192.168.101.17'] 
+ALLOWED_HOSTS = ["192.168.100.92","192.168.100.97",'127.0.0.1', 'localhost', '192.168.1.9', '192.168.101.17', '192.168.100.186'] 
 
 
 # Application definition
@@ -104,7 +114,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "zerowaste.urls"
-CORS_ALLOWED_ORIGINS = ["http://192.168.100.97:8100", 'http://localhost:8100', 'http://192.168.100.92:8100', 'http://192.168.101.17:8100'] 
+CORS_ALLOWED_ORIGINS = ["http://192.168.100.97:8100", 'http://localhost:8100', 'http://192.168.100.186:8100', 'http://192.168.101.17:8100'] 
 
 TEMPLATES = [
     {
@@ -201,3 +211,50 @@ CACHES = {
         "LOCATION": "redis://127.0.0.1:6379/2", 
     }
 }
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        # Filtru care exclude nivelul INFO
+        'exclude_info': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: record.levelname != 'INFO',
+        },
+    },
+    'handlers': {
+        # Handler pentru scrierea în consolă (include toate nivelurile)
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        # Handler pentru scrierea în fișier (exclude INFO)
+        'ws_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join('Logs', 'websocket_events.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # Logger pentru evenimentele Daphne (inclusiv WebSocket)
+        'daphne': {
+            'handlers': ['console', 'ws_file'],  # Trimite logurile atât în consolă, cât și în fișier
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
