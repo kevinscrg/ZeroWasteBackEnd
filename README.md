@@ -1,4 +1,8 @@
 # ZeroWasteBackEnd
+
+ZeroWasteFrontend: <a>https://github.com/kevinscrg/ZeroWasteFrontEnd</a>
+ZeroWasteAI: <a>https://github.com/kriss1809/ZeroWasteAI</a>
+
 Before stating the API, run the following commands:<br>
 <b>pip install django<br>
 pip install djangorestframework<br>
